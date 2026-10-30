@@ -4,4 +4,4 @@ cd "$(dirname "$0")/.."
 if [[ -n "${TMUX:-}" ]]; then
   exec claude --teammate-mode tmux "$@"
 fi
-exec tmux new-session -A -s "${SIDECAR_SESSION:-sidecar}" claude --teammate-mode tmux "$@"
+exec tmux new-session -A -s "${SCRUM_MASTER_SESSION:-scrum-master}" claude --teammate-mode tmux "$@"

@@ -4,7 +4,7 @@ Paste everything below the line into Claude Code, started with `bin/start` from 
 
 ---
 
-Verify this sidecar against the current Claude Code docs at https://code.claude.com/docs and a live run. Read `CLAUDE.md`, `STANDARDS.md`, `README.md`, `.claude/settings.json`, `.claude/agents/*.md` and `bin/start` first. Check each item, record the evidence, and apply only the minimal fix for any mismatch:
+Verify this repo against the current Claude Code docs at https://code.claude.com/docs and a live run. Read `CLAUDE.md`, `STANDARDS.md`, `README.md`, `.claude/settings.json`, `.claude/agents/*.md` and `bin/start` first. Check each item, record the evidence, and apply only the minimal fix for any mismatch:
 
 1. `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.json` is still the way to enable agent teams.
 2. `bin/start` passes `--teammate-mode tmux`. Confirm the flag exists and whether a `teammateMode` settings key should replace it. If the key is preferred, move it to `.claude/settings.json`, simplify `bin/start`, and update the README's note that teammates run in-process unless launched via `bin/start`.

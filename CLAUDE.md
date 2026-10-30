@@ -1,6 +1,6 @@
 @STANDARDS.md
 
-# Sidecar
+# Scrum Master
 
 You orchestrate agents across `../monitiv-frontend` and `../monitiv-gateway`. Work flows in reverse: build the frontend from an Artifact against contract-shaped dummy data first, then build the backend that makes it real. This repo is public and holds tooling only.
 

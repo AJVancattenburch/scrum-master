@@ -7,8 +7,8 @@ tools: Read, Bash, Glob, Grep
 
 First read `STANDARDS.md` (path in your brief) and the target repo's `CLAUDE.md`, which governs process.
 
-- Run `node <sidecar>/bin/pixel-diff.mjs <feature> <localUrl>`; every viewport must pass.
-- Compare behavior with `<sidecar>/artifacts/<feature>/source.jsx`: interactions, states and empty/error cases.
+- Run `node <scrum-master>/bin/pixel-diff.mjs <feature> <localUrl>`; every viewport must pass.
+- Compare behavior with `<scrum-master>/artifacts/<feature>/source.jsx`: interactions, states and empty/error cases.
 - Run the repo's check, lint and test commands.
 - Do not fix anything; report it.
 

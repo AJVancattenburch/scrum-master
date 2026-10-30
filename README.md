@@ -1,4 +1,4 @@
-# Sidecar
+# Scrum Master
 
 Tooling-only workspace that orchestrates Claude Code agents across `../monitiv-frontend` and `../monitiv-gateway`.
 Work flows in reverse: the frontend is built from an Artifact against contract-shaped dummy data first, then the gateway makes it real.
@@ -52,7 +52,7 @@ bin/start
 6. Clone the three repos side by side under `~` (not `/mnt/c`):
    ```sh
    cd ~
-   git clone <sidecar-url> scrum-master
+   git clone https://github.com/AJVancattenburch/scrum-master.git
    git clone <frontend-url> monitiv-frontend
    git clone <gateway-url> monitiv-gateway
    ```
@@ -68,7 +68,7 @@ bin/start
 
 ## Daily use
 
-Start the orchestrator. `bin/start` opens (or reattaches to) the tmux session `sidecar`, overridable with `SIDECAR_SESSION`; extra arguments go to `claude`. Teammates get their own tmux panes only when launched this way; a plain `claude` runs them in-process.
+Start the orchestrator. `bin/start` opens (or reattaches to) the tmux session `scrum-master`, overridable with `SCRUM_MASTER_SESSION`; extra arguments go to `claude`. Teammates get their own tmux panes only when launched this way; a plain `claude` runs them in-process.
 
 ```sh
 bin/start
