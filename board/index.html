@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidecar board</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f6f8; --panel: #fff; --fg: #1c2025; --muted: #5d6672; --line: #d9dee4; --accent: #1f56c4; --error: #b42318;
+    font: 14px/1.45 system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #131619; --panel: #1c2026; --fg: #e5e8ec; --muted: #9ba4ae; --line: #313841; --accent: #7ea6ff; --error: #ff8a80; }
+  }
+  body { margin: 0; padding: 1rem; background: var(--bg); color: var(--fg); }
+  main { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: .75rem 1rem; }
+  h2 { margin: 0 0 .5rem; font-size: 1rem; }
+  ol, ul { margin: 0; padding: 0; list-style: none; }
+  li { padding: .45rem 0; border-top: 1px solid var(--line); }
+  li:first-child { border-top: 0; }
+  #tasks li { cursor: grab; }
+  #tasks li.over { box-shadow: 0 -2px 0 var(--accent); }
+  .badge { display: inline-block; margin-right: .4rem; padding: 0 .45rem; border: 1px solid var(--accent); border-radius: 999px; color: var(--accent); font-size: .75rem; }
+  .meta { color: var(--muted); font-size: .85em; }
+  #error { color: var(--error); }
+  #error:empty { display: none; }
+</style>
+</head>
+<body>
+<p id="error" role="alert"></p>
+<main>
+  <section><h2>Tasks</h2><ol id="tasks"></ol></section>
+  <section><h2>Progress</h2><ul id="progress"></ul></section>
+  <section><h2>Data needs</h2><ul id="dataNeeds"></ul></section>
+  <section><h2>Blockers</h2><ul id="blockers"></ul></section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const showError = (err) => { $('error').textContent = err.message; };
+
+  function row(badge, label, ...meta) {
+    const li = document.createElement('li');
+    const tag = document.createElement('span');
+    tag.className = 'badge';
+    tag.textContent = badge;
+    const details = document.createElement('div');
+    details.className = 'meta';
+    details.textContent = meta.filter(Boolean).join(' · ');
+    li.append(tag, label, details);
+    return li;
+  }
+
+  async function ok(res) {
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    return res;
+  }
+
+  function taskRow(task, index) {
+    const li = row(task.stage, task.title, task.id, task.repo, task.ticket);
+    li.draggable = true;
+    li.ondragstart = (e) => e.dataTransfer.setData('text/plain', task.id);
+    li.ondragover = (e) => { e.preventDefault(); li.classList.add('over'); };
+    li.ondragleave = () => li.classList.remove('over');
+    li.ondrop = (e) => {
+      e.preventDefault();
+      li.classList.remove('over');
+      const body = JSON.stringify({ id: e.dataTransfer.getData('text/plain'), index });
+      fetch('/move', { method: 'POST', headers: { 'content-type': 'application/json' }, body }).then(ok).catch(showError);
+    };
+    return li;
+  }
+
+  async function render() {
+    const board = await (await ok(await fetch('/board.json'))).json();
+    const open = (items) => items.filter((item) => item.status === 'open');
+    $('tasks').replaceChildren(...board.tasks.map(taskRow));
+    $('progress').replaceChildren(...board.stages.map((stage) => row(board.tasks.filter((t) => t.stage === stage).length, stage)));
+    $('dataNeeds').replaceChildren(...open(board.dataNeeds).map((d) => row(d.id, d.field, d.task, d.shape, d.likelySource)));
+    $('blockers').replaceChildren(...open(board.blockers).map((b) => row(b.id, b.question, b.task, b.askWho && `ask ${b.askWho}`, b.answer)));
+    $('error').textContent = '';
+  }
+
+  const refresh = () => render().catch(showError);
+  new EventSource('/events').onmessage = refresh;
+  refresh();
+</script>
+</body>
+</html>
