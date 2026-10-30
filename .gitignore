@@ -1,0 +1,9 @@
+node_modules/
+board.json
+board.json.tmp-*
+artifacts/*
+!artifacts/.gitkeep
+tickets/*
+!tickets/.gitkeep
+docs/superpowers/
+test-results/

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+if [[ -n "${TMUX:-}" ]]; then
+  exec claude --teammate-mode tmux "$@"
+fi
+exec tmux new-session -A -s "${SIDECAR_SESSION:-sidecar}" claude --teammate-mode tmux "$@"
