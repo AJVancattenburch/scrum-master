@@ -75,3 +75,11 @@ test('runDiff masks hide selectors in both captures', async () => {
   const [masked] = await runDiff({ featureDir: featureDir({ link, config: { ...small, hide: ['#badge'] } }), localUrl: fixture('inner.html') });
   assert.equal(masked.pass, true);
 });
+
+test('runDiff clicks navigate selectors in order on the artifact only', async () => {
+  const link = fixture('nav.html');
+  const [unnavigated] = await runDiff({ featureDir: featureDir({ link, config: small }), localUrl: fixture('inner.html') });
+  assert.equal(unnavigated.pass, false);
+  const [navigated] = await runDiff({ featureDir: featureDir({ link, config: { ...small, navigate: ['#open', '#go'] } }), localUrl: fixture('inner.html') });
+  assert.equal(navigated.pass, true);
+});

@@ -16,6 +16,6 @@ try {
   }
   if (!results.every(({ pass }) => pass)) process.exitCode = 1;
 } catch (err) {
-  console.error(err.message);
+  console.error(err.cause ? `${err.message}\n  cause: ${err.cause.message}` : err.message);
   process.exit(1);
 }

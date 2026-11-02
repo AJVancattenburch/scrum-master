@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nav fixture</title>
+  <style>
+    body {
+      margin: 0;
+      background: #fff
+    }
+
+    div {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 100px;
+      height: 100px;
+      background: #c00
+    }
+
+    button {
+      position: absolute;
+      top: 200px;
+      left: 20px
+    }
+  </style>
+</head>
+
+<body>
+  <button id="open" onclick="this.nextElementSibling.hidden = false">Open</button>
+  <button id="go" hidden onclick="document.body.replaceChildren(document.createElement('div'))">Go</button>
+</body>
+
+</html>
