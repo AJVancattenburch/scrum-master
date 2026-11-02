@@ -67,3 +67,11 @@ test('runDiff throws when the artifact is unreachable and there is no baseline',
   const dir = featureDir({ link: fixture('missing.html'), config: small });
   await assert.rejects(runDiff({ featureDir: dir, localUrl: fixture('inner.html') }), /^Error: artifact unreachable and no baseline: file:.*missing\.html$/);
 });
+
+test('runDiff masks hide selectors in both captures', async () => {
+  const link = fixture('badge.html');
+  const [unmasked] = await runDiff({ featureDir: featureDir({ link, config: small }), localUrl: fixture('inner.html') });
+  assert.equal(unmasked.pass, false);
+  const [masked] = await runDiff({ featureDir: featureDir({ link, config: { ...small, hide: ['#badge'] } }), localUrl: fixture('inner.html') });
+  assert.equal(masked.pass, true);
+});
