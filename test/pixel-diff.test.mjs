@@ -76,6 +76,15 @@ test('runDiff masks hide selectors in both captures', async () => {
   assert.equal(masked.pass, true);
 });
 
+test('runDiff takes remove selectors out of the layout, where hide leaves their space', async () => {
+  const link = fixture('flow.html');
+  const localUrl = fixture('flow-extra.html');
+  const [hidden] = await runDiff({ featureDir: featureDir({ link, config: { ...small, hide: ['#extra'] } }), localUrl });
+  assert.equal(hidden.pass, false);
+  const [removed] = await runDiff({ featureDir: featureDir({ link, config: { ...small, remove: ['#extra'] } }), localUrl });
+  assert.equal(removed.pass, true);
+});
+
 test('runDiff clicks navigate selectors in order on the artifact only', async () => {
   const link = fixture('nav.html');
   const [unnavigated] = await runDiff({ featureDir: featureDir({ link, config: small }), localUrl: fixture('inner.html') });
