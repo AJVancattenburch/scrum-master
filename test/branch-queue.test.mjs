@@ -21,6 +21,7 @@ function branch(name, overrides = {}) {
     name,
     behind: 0,
     ageDays: 1,
+    lastCommitDays: 1,
     conflicts: [],
     worktree: null,
     dirty: false,
@@ -113,6 +114,17 @@ test('assigns nextAction by state precedence', () => {
   assert.equal(byName['mergeable-branch'], 'merge');
 });
 
+test('pluralizes the conflict count in nextAction', () => {
+  const snap = snapshot('monitiv-frontend', [
+    branch('one-conflict', { conflicts: ['a.js'] }),
+    branch('three-conflicts', { conflicts: ['a.js', 'b.js', 'c.js'] }),
+  ]);
+  const rows = rankBranches([snap], board);
+  const byName = Object.fromEntries(rows.map((r) => [r.branch, r.nextAction]));
+  assert.equal(byName['one-conflict'], 'rebase — conflicts in 1 file');
+  assert.equal(byName['three-conflicts'], 'rebase — conflicts in 3 files');
+});
+
 test('matches a task by PR URL or "FE/GW PR #n" in ticket, beating name match', () => {
   const feSnap = snapshot('monitiv-frontend', [
     branch('t42-unrelated-name', { pr: { number: 12, isDraft: false, url: 'https://github.com/pennant/monitiv-frontend/pull/12' } }),
@@ -150,4 +162,32 @@ test('branch with no matching PR or name has no task link', () => {
   const snap = snapshot('monitiv-frontend', [branch('random-branch')]);
   const rows = rankBranches([snap], board);
   assert.equal(rows[0].task, undefined);
+});
+
+test('a branch with a head commit older than 14 days is grouped as stale, below ready and not-ready', () => {
+  const snap = snapshot('monitiv-frontend', [
+    branch('fresh', { lastCommitDays: 1 }),
+    branch('stale-one', { lastCommitDays: 15 }),
+    branch('boundary', { lastCommitDays: 14 }),
+  ]);
+  const rows = rankBranches([snap], board);
+  assert.deepEqual(rows.map((r) => [r.branch, r.stale]), [
+    ['fresh', false],
+    ['boundary', false],
+    ['stale-one', true],
+  ]);
+});
+
+test('stale wins over not-ready: a dirty and stale branch is grouped with stale, not not-ready', () => {
+  const snap = snapshot('monitiv-frontend', [
+    branch('dirty-and-stale', { dirty: true, lastCommitDays: 30, worktree: '/wt/dirty-and-stale' }),
+    branch('dirty-but-fresh', { dirty: true, lastCommitDays: 1, worktree: '/wt/dirty-but-fresh' }),
+  ]);
+  const rows = rankBranches([snap], board);
+  const byName = Object.fromEntries(rows.map((r) => [r.branch, r.stale]));
+  assert.equal(byName['dirty-and-stale'], true);
+  assert.equal(byName['dirty-but-fresh'], false);
+  // not-ready (dirty-but-fresh) is ordered ahead of stale (dirty-and-stale).
+  const names = rows.map((r) => r.branch);
+  assert.ok(names.indexOf('dirty-but-fresh') < names.indexOf('dirty-and-stale'));
 });

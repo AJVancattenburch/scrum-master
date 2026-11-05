@@ -88,7 +88,7 @@ describe('branch queue routes', () => {
   let snapshotImpl;
 
   const repoABranch = (overrides = {}) => ({
-    name: 'feature-a', behind: 1, ageDays: 1, conflicts: [], worktree: null, dirty: false, unpushed: false, isAncestorOfDev: false, parents: [], ...overrides,
+    name: 'feature-a', behind: 1, ageDays: 1, lastCommitDays: 1, conflicts: [], worktree: null, dirty: false, unpushed: false, isAncestorOfDev: false, parents: [], ...overrides,
   });
 
   const fakeSnapshot = async (repoPath) => snapshotImpl(repoPath);

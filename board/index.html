@@ -27,7 +27,7 @@
   #error { color: var(--error); }
   #error:empty { display: none; }
   #branchError { color: var(--error); }
-  #branchesNotReady li { opacity: .6; }
+  #branchesNotReady li, #branchesStale li { opacity: .6; }
   #branchRefresh { float: right; font: inherit; color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
 </style>
 </head>
@@ -41,6 +41,10 @@
     <details id="branchesNotReadyDetails">
       <summary>Not ready (<span id="notReadyCount">0</span>)</summary>
       <ol id="branchesNotReady"></ol>
+    </details>
+    <details id="branchesStaleDetails">
+      <summary>Stale (<span id="staleCount">0</span>)</summary>
+      <ol id="branchesStale"></ol>
     </details>
   </section>
   <section><h2>Tasks</h2><ol id="tasks"></ol></section>
@@ -95,8 +99,14 @@
   }
 
   function branchRow(item) {
-    const badge = item.conflicts.length > 0 ? `${item.conflicts.length} conflicts` : `${item.behind} behind`;
+    const n = item.conflicts.length;
+    const badge = n > 0 ? `${n} conflict${n === 1 ? '' : 's'}` : `${item.behind} behind`;
     return row(badge, item.branch, item.repo, item.nextAction, item.task && `task ${item.task}`);
+  }
+
+  function renderBranchGroup(listId, countId, items) {
+    $(listId).replaceChildren(...items.map(branchRow));
+    $(countId).textContent = items.length;
   }
 
   async function renderBranches() {
@@ -104,10 +114,9 @@
     if (res.status === 404) { $('branchesSection').hidden = true; return; }
     const { rows, repos } = await (await ok(res)).json();
     $('branchesSection').hidden = false;
-    const notReady = rows.filter((r) => !r.ready);
-    $('branchesReady').replaceChildren(...rows.filter((r) => r.ready).map(branchRow));
-    $('branchesNotReady').replaceChildren(...notReady.map(branchRow));
-    $('notReadyCount').textContent = notReady.length;
+    $('branchesReady').replaceChildren(...rows.filter((r) => !r.stale && r.ready).map(branchRow));
+    renderBranchGroup('branchesNotReady', 'notReadyCount', rows.filter((r) => !r.stale && !r.ready));
+    renderBranchGroup('branchesStale', 'staleCount', rows.filter((r) => r.stale));
     $('branchError').textContent = repos
       .filter((r) => r.error)
       .map((r) => `${r.repo}: ${r.error.message} (last good ${r.fetchedAt ?? 'never'})`)

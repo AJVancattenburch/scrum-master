@@ -69,6 +69,50 @@ test('snapshotRepo reports a real conflict, a dirty worktree, and excludes dev',
   assert.equal(byName['dirty-branch'].dirty, true);
   assert.ok(byName['dirty-branch'].worktree.endsWith('dirty-worktree'));
   assert.equal(byName['feature-conflict'].dirty, false);
+  assert.equal(byName['feature-conflict'].lastCommitDays, 0);
+});
+
+test('never passes a bare branch name as a git argument (argument injection)', async () => {
+  const calls = [];
+  const run = async (cmd, args) => {
+    calls.push([cmd, ...args]);
+    if (cmd === 'gh') return '[]';
+    if (args[0] === 'fetch') return '';
+    if (args[0] === 'for-each-ref' && args[2] === 'refs/heads') return '-dangerous\n';
+    if (args[0] === 'for-each-ref' && args[2] === 'refs/remotes/origin') return '';
+    if (args[0] === 'for-each-ref' && args[1] === '--format=%(upstream)') return '';
+    if (args[0] === 'worktree') return '';
+    if (args[0] === 'merge-base' && args[1] === '--is-ancestor') {
+      const err = new Error('not an ancestor');
+      err.code = 1;
+      throw err;
+    }
+    if (args[0] === 'merge-base') return `${'a'.repeat(40)}\n`;
+    if (args[0] === 'rev-list') return '0\n';
+    if (args[0] === 'show') return `${Math.floor(Date.now() / 1000)}\n`;
+    if (args[0] === 'merge-tree') return `${'a'.repeat(40)}\n`;
+    throw new Error(`unexpected command: ${cmd} ${args.join(' ')}`);
+  };
+
+  const snapshot = await snapshotRepo('/repo', { run });
+  assert.ok(snapshot.branches.some((b) => b.name === '-dangerous'));
+  for (const [cmd, ...args] of calls) {
+    assert.ok(!args.includes('-dangerous'), `raw branch name passed as a bare argument to ${cmd} ${args.join(' ')}`);
+  }
+  assert.ok(calls.some(([, ...args]) => args.includes('refs/heads/-dangerous')), 'expected the name to be used only inside a full refname');
+});
+
+test('a PR head with no matching origin ref is dropped from candidates without failing the snapshot', async () => {
+  const run = async (cmd, args) => {
+    if (cmd === 'gh') return JSON.stringify([{ number: 9, headRefName: 'fork-feature', isDraft: false, url: 'https://x/9' }]);
+    if (args[0] === 'fetch') return '';
+    if (args[0] === 'for-each-ref' && args[2] === 'refs/heads') return '';
+    if (args[0] === 'for-each-ref' && args[2] === 'refs/remotes/origin') return '';
+    if (args[0] === 'worktree') return '';
+    throw new Error(`unexpected command: ${cmd} ${args.join(' ')}`);
+  };
+  const snapshot = await snapshotRepo('/repo', { run });
+  assert.deepEqual(snapshot.branches, []);
 });
 
 test('snapshotRepo throws with the failing command and stderr when gh fails', async () => {
