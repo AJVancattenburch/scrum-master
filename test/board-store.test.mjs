@@ -21,9 +21,10 @@ test('addItem applies prefixes, sequential ids and defaults', () => {
   const board = emptyBoard();
   assert.deepEqual(addItem(board, 'tasks', { title: 'x' }), { id: 'T1', stage: 'capture', repo: 'frontend', ticket: '', title: 'x' });
   assert.equal(addItem(board, 'tasks', { title: 'y', repo: 'both', stage: 'build' }).id, 'T2');
+  assert.equal(addItem(board, 'tasks', { title: 'z', repo: 'scrum-master' }).repo, 'scrum-master');
   assert.deepEqual(addItem(board, 'dataNeeds', { task: 'T1', field: 'f' }), { id: 'D1', shape: '', likelySource: '', status: 'open', task: 'T1', field: 'f' });
   assert.deepEqual(addItem(board, 'blockers', { question: 'q?' }), { id: 'B1', task: '', askWho: '', answer: '', status: 'open', question: 'q?' });
-  assert.equal(board.tasks.length, 2);
+  assert.equal(board.tasks.length, 3);
 });
 
 test('addItem rejects unknown list, unknown key, bad enum and missing required', () => {
