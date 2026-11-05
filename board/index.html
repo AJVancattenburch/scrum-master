@@ -26,11 +26,23 @@
   .meta { color: var(--muted); font-size: .85em; }
   #error { color: var(--error); }
   #error:empty { display: none; }
+  #branchError { color: var(--error); }
+  #branchesNotReady li { opacity: .6; }
+  #branchRefresh { float: right; font: inherit; color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
 </style>
 </head>
 <body>
 <p id="error" role="alert"></p>
 <main>
+  <section id="branchesSection" hidden>
+    <h2>Ready to merge <button id="branchRefresh" type="button">Refresh</button></h2>
+    <p id="branchError" class="meta"></p>
+    <ol id="branchesReady"></ol>
+    <details id="branchesNotReadyDetails">
+      <summary>Not ready (<span id="notReadyCount">0</span>)</summary>
+      <ol id="branchesNotReady"></ol>
+    </details>
+  </section>
   <section><h2>Tasks</h2><ol id="tasks"></ol></section>
   <section><h2>Progress</h2><ul id="progress"></ul></section>
   <section><h2>Data needs</h2><ul id="dataNeeds"></ul></section>
@@ -82,7 +94,29 @@
     $('error').textContent = '';
   }
 
-  const refresh = () => render().catch(showError);
+  function branchRow(item) {
+    const badge = item.conflicts.length > 0 ? `${item.conflicts.length} conflicts` : `${item.behind} behind`;
+    return row(badge, item.branch, item.repo, item.nextAction, item.task && `task ${item.task}`);
+  }
+
+  async function renderBranches() {
+    const res = await fetch('/branches.json');
+    if (res.status === 404) { $('branchesSection').hidden = true; return; }
+    const { rows, repos } = await (await ok(res)).json();
+    $('branchesSection').hidden = false;
+    const notReady = rows.filter((r) => !r.ready);
+    $('branchesReady').replaceChildren(...rows.filter((r) => r.ready).map(branchRow));
+    $('branchesNotReady').replaceChildren(...notReady.map(branchRow));
+    $('notReadyCount').textContent = notReady.length;
+    $('branchError').textContent = repos
+      .filter((r) => r.error)
+      .map((r) => `${r.repo}: ${r.error.message} (last good ${r.fetchedAt ?? 'never'})`)
+      .join(' · ');
+  }
+
+  $('branchRefresh').onclick = () => fetch('/branches/refresh', { method: 'POST' }).then(ok).catch(showError);
+
+  const refresh = () => Promise.all([render(), renderBranches()]).catch(showError);
   new EventSource('/events').onmessage = refresh;
   refresh();
 </script>
