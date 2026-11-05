@@ -102,6 +102,36 @@ test('never passes a bare branch name as a git argument (argument injection)', a
   assert.ok(calls.some(([, ...args]) => args.includes('refs/heads/-dangerous')), 'expected the name to be used only inside a full refname');
 });
 
+test('a local branch whose configured upstream ref no longer resolves (stale/pruned) is treated as unpushed, not a failure', async () => {
+  const run = async (cmd, args) => {
+    if (cmd === 'gh') return '[]';
+    if (args[0] === 'fetch') return '';
+    if (args[0] === 'for-each-ref' && args[2] === 'refs/heads') return 'stale-upstream\n';
+    if (args[0] === 'for-each-ref' && args[2] === 'refs/remotes/origin') return '';
+    if (args[0] === 'for-each-ref' && args[1] === '--format=%(upstream)') return 'refs/remotes/origin/stale-upstream\n';
+    if (args[0] === 'worktree') return '';
+    if (args[0] === 'merge-base' && args[1] === '--is-ancestor') {
+      const err = new Error('not an ancestor');
+      err.code = 1;
+      throw err;
+    }
+    if (args[0] === 'merge-base') return `${'a'.repeat(40)}\n`;
+    if (args[0] === 'rev-list' && args[2].includes('refs/remotes/origin/stale-upstream')) {
+      const err = new Error('ambiguous argument');
+      err.code = 128;
+      throw err;
+    }
+    if (args[0] === 'rev-list') return '0\n';
+    if (args[0] === 'show') return `${Math.floor(Date.now() / 1000)}\n`;
+    if (args[0] === 'merge-tree') return `${'a'.repeat(40)}\n`;
+    throw new Error(`unexpected command: ${cmd} ${args.join(' ')}`);
+  };
+
+  const snapshot = await snapshotRepo('/repo', { run });
+  assert.equal(snapshot.branches[0].name, 'stale-upstream');
+  assert.equal(snapshot.branches[0].unpushed, true);
+});
+
 test('a PR head with no matching origin ref is dropped from candidates without failing the snapshot', async () => {
   const run = async (cmd, args) => {
     if (cmd === 'gh') return JSON.stringify([{ number: 9, headRefName: 'fork-feature', isDraft: false, url: 'https://x/9' }]);
