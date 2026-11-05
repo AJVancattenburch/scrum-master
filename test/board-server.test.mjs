@@ -1,4 +1,4 @@
-import { test, before, after } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import http from 'node:http';
@@ -63,6 +63,11 @@ test('unknown routes return 404', async () => {
   assert.equal((await fetch(`${base}/board.json`, { method: 'DELETE' })).status, 404);
 });
 
+test('branch routes are absent when repos is not configured', async () => {
+  assert.equal((await fetch(`${base}/branches.json`)).status, 404);
+  assert.equal((await fetch(`${base}/branches/refresh`, { method: 'POST' })).status, 404);
+});
+
 test('GET /events pushes after saveBoard', async () => {
   const req = http.get(`${base}/events`);
   const [res] = await once(req, 'response');
@@ -72,4 +77,81 @@ test('GET /events pushes after saveBoard', async () => {
   await saveBoard(boardPath, emptyBoard());
   await received;
   req.destroy();
+});
+
+describe('branch queue routes', () => {
+  const branchDir = mkdtempSync(path.join(tmpdir(), 'board-branches-'));
+  const branchBoardPath = path.join(branchDir, 'board.json');
+  const branchHtmlPath = path.join(branchDir, 'index.html');
+  let branchServer;
+  let branchBase;
+  let snapshotImpl;
+
+  const repoABranch = (overrides = {}) => ({
+    name: 'feature-a', behind: 1, ageDays: 1, conflicts: [], worktree: null, dirty: false, unpushed: false, isAncestorOfDev: false, parents: [], ...overrides,
+  });
+
+  const fakeSnapshot = async (repoPath) => snapshotImpl(repoPath);
+
+  before(async () => {
+    writeFileSync(branchHtmlPath, '<h1>board</h1>');
+    const board = emptyBoard();
+    addItem(board, 'tasks', { title: 'x' });
+    await saveBoard(branchBoardPath, board);
+    snapshotImpl = async (repoPath) => ({ repo: path.basename(repoPath), fetchedAt: '2026-11-04T00:00:00.000Z', branches: [repoABranch()], prs: [] });
+    branchServer = createBoardServer({
+      boardPath: branchBoardPath, htmlPath: branchHtmlPath, port: 0, repos: ['/fake/repo-a'], snapshot: fakeSnapshot,
+    });
+    await once(branchServer, 'listening');
+    branchBase = `http://127.0.0.1:${branchServer.address().port}`;
+  });
+
+  after(() => branchServer.close());
+
+  test('GET /branches.json reflects the initial automatic refresh', async () => {
+    let body;
+    for (let attempt = 0; attempt < 50 && !body?.repos.some((r) => r.fetchedAt); attempt += 1) {
+      body = await (await fetch(`${branchBase}/branches.json`)).json();
+      if (!body.repos.some((r) => r.fetchedAt)) await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    assert.deepEqual(body.repos, [{ repo: 'repo-a', fetchedAt: '2026-11-04T00:00:00.000Z' }]);
+    assert.deepEqual(body.rows.map((row) => row.branch), ['feature-a']);
+  });
+
+  test('POST /branches/refresh returns 202, re-snapshots and broadcasts on /events', async () => {
+    snapshotImpl = async (repoPath) => ({ repo: path.basename(repoPath), fetchedAt: '2026-11-04T01:00:00.000Z', branches: [repoABranch({ name: 'feature-b' })], prs: [] });
+
+    const req = http.get(`${branchBase}/events`);
+    const [eventsRes] = await once(req, 'response');
+    eventsRes.setEncoding('utf8');
+    const received = new Promise((resolve) => eventsRes.on('data', (chunk) => chunk.includes('data: branches\n\n') && resolve()));
+
+    const refreshRes = await fetch(`${branchBase}/branches/refresh`, { method: 'POST' });
+    assert.equal(refreshRes.status, 202);
+    await received;
+    req.destroy();
+
+    const body = await (await fetch(`${branchBase}/branches.json`)).json();
+    assert.deepEqual(body.repos, [{ repo: 'repo-a', fetchedAt: '2026-11-04T01:00:00.000Z' }]);
+    assert.deepEqual(body.rows.map((row) => row.branch), ['feature-b']);
+  });
+
+  test('a failing snapshot keeps the last good data and records an error with a timestamp', async () => {
+    snapshotImpl = async () => { throw new Error('gh: not authenticated'); };
+
+    const req = http.get(`${branchBase}/events`);
+    const [eventsRes] = await once(req, 'response');
+    eventsRes.setEncoding('utf8');
+    const received = new Promise((resolve) => eventsRes.on('data', (chunk) => chunk.includes('data: branches\n\n') && resolve()));
+    await fetch(`${branchBase}/branches/refresh`, { method: 'POST' });
+    await received;
+    req.destroy();
+
+    const body = await (await fetch(`${branchBase}/branches.json`)).json();
+    assert.equal(body.repos.length, 1);
+    assert.equal(body.repos[0].fetchedAt, '2026-11-04T01:00:00.000Z');
+    assert.equal(body.repos[0].error.message, 'gh: not authenticated');
+    assert.match(body.repos[0].error.at, /^\d{4}-\d{2}-\d{2}T/);
+    assert.deepEqual(body.rows.map((row) => row.branch), ['feature-b']);
+  });
 });

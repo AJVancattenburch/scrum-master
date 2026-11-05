@@ -33,7 +33,10 @@ const commands = {
   },
   serve: (flag, port = '4317') => {
     if (flag !== undefined && flag !== '--port') throw new BoardError(USAGE);
-    const server = createBoardServer({ boardPath, htmlPath: path.join(root, 'board', 'index.html'), port: Number(port) });
+    const repos = process.env.BOARD_REPOS
+      ? process.env.BOARD_REPOS.split(',').map((repoPath) => path.resolve(repoPath.trim()))
+      : ['../monitiv-frontend', '../monitiv-gateway'].map((rel) => path.resolve(root, rel));
+    const server = createBoardServer({ boardPath, htmlPath: path.join(root, 'board', 'index.html'), port: Number(port), repos });
     server.on('listening', () => console.log(`http://localhost:${server.address().port}`));
   },
 };
