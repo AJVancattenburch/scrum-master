@@ -28,7 +28,7 @@ Pick a lane when the user approves the plan; lanes only move up.
 
 - Write the task to `tickets/tasks/<id>.md`; its checklist (with SHAs) is the task state. Brief every helper with `node bin/brief.mjs <role> <task-file>` and use the `MODEL:` it prints.
 - Accept work only on `node bin/gate.mjs <worktree>` exit 0 plus a reviewer PASS; a self-report is never the gate. Check `.superpowers/stop-gate/*.failed` after each developer.
-- Never read delegated code. At most 3 long-running agents at once, parallel developers included; after a 402, run everything sequentially. Run the orchestrator itself interactively (iTerm2 or tmux) to see teammate panes — backgrounded, it spawns teammates on a detached tmux server.
+- Never read delegated code. At most 3 long-running agents at once, parallel developers included; after a 402, run everything sequentially. Run the orchestrator in the foreground in iTerm2 or tmux and spawn helpers as named teammates (not background subagents) so each gets a visible pane; a background-job orchestrator puts teammates on a detached tmux server instead.
 
 ## Board
 
