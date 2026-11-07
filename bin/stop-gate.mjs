@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { auditWorktree, blockingFindings, formatFinding } from '../lib/diff-audit.mjs';
@@ -26,14 +26,17 @@ function main() {
   const id = String(payload.agent_id).replace(/[^\w.-]/g, '_');
   mkdirSync(stateDir, { recursive: true });
   const countPath = path.join(stateDir, `${id}.json`);
+  const markerPath = path.join(stateDir, `${id}.failed`);
   const blocksSoFar = readJson(countPath, 0);
   const { action, reason } = decide({ blocksSoFar, problem: problemWith(worktreeFrom(payload.last_assistant_message)) });
-  if (action === 'block') {
+  if (action === 'allow') {
+    rmSync(countPath, { force: true });
+    rmSync(markerPath, { force: true });
+  } else if (action === 'block') {
     writeFileSync(countPath, JSON.stringify(blocksSoFar + 1));
     process.stdout.write(JSON.stringify({ decision: 'block', reason }));
-  } else if (action === 'give-up') {
-    const markerPath = path.join(stateDir, `${id}.failed`);
-    if (!existsSync(markerPath)) writeFileSync(markerPath, `GATE: FAILED\n${reason}\n`);
+  } else if (!existsSync(markerPath)) {
+    writeFileSync(markerPath, `GATE: FAILED\n${reason}\n`);
   }
 }
 

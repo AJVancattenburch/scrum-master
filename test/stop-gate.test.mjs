@@ -52,6 +52,16 @@ test('a missing WORKTREE line or a failing audit blocks twice per agent, then wr
   assert.equal(JSON.parse(hook(dir, { agent_id: 'a2', last_assistant_message: 'no line' }).stdout).decision, 'block');
 });
 
+test('a passing audit clears the agent\'s block count and failed marker', (t) => {
+  const dir = state(t);
+  const clean = makeTempRepo('monitiv-gateway', t);
+  for (let i = 0; i <= MAX_BLOCKS; i += 1) hook(dir, { agent_id: 'a1', last_assistant_message: 'no line' });
+  assert.ok(existsSync(path.join(dir, 'a1.failed')));
+  assert.equal(hook(dir, { agent_id: 'a1', last_assistant_message: `WORKTREE: ${clean}` }).stdout, '');
+  assert.ok(!existsSync(path.join(dir, 'a1.failed')));
+  assert.ok(!existsSync(path.join(dir, 'a1.json')));
+});
+
 test('invalid input exits 1 with a message and never blocks silently', (t) => {
   const dir = state(t);
   const bad = hook(dir, 'not json');
