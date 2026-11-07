@@ -161,7 +161,9 @@ test('CLI prints the model (sonnet for a reviewer of an empty diff), an absolute
   assert.match(stdout, /^MODEL: opus\n/);
   assert.ok(stdout.includes(`REPORT: ${ROOT}/.superpowers/reports/T9-developer.md`));
   assert.ok(stdout.includes(`WORKTREE: ${repo}`));
-  assert.match(runCli(['reviewer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]).stdout, /^MODEL: sonnet\n/);
+  const reviewer = runCli(['reviewer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]);
+  assert.equal(reviewer.code, 0);
+  assert.match(reviewer.stdout, /^MODEL: sonnet\n/);
 });
 
 test('CLI exits 2 on bad input: usage, role, lane, brief size, task file, id or task path', (t) => {
@@ -188,9 +190,9 @@ test('CLI exits 2 on bad input: usage, role, lane, brief size, task file, id or 
   for (const file of invalid) assert.equal(runCli(['developer', file]).code, 2, file);
 });
 
-test('CLI exits 1 when the task repo does not match the worktree', (t) => {
+test('CLI exits 2 when the task repo does not match the worktree', (t) => {
   const repo = makeTempRepo('monitiv-frontend', t);
   const { code, stderr } = runCli(['developer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]);
-  assert.equal(code, 1);
+  assert.equal(code, 2);
   assert.match(stderr, /task says repo monitiv-gateway/);
 });

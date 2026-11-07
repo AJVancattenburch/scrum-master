@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertBriefFits, assertShellLiteral, briefVars, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
+import { assertBriefFits, assertShellLiteral, briefVars, inputError, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
 import { addedLineCount } from '../lib/diff-audit.mjs';
 import { resolveProfile } from '../lib/repo-profile.mjs';
 
@@ -21,7 +21,7 @@ function main([role, taskArg]) {
     assertShellLiteral('task file path', taskFile);
     const task = parseTask(readFileSync(taskFile, 'utf8'));
     const profile = resolveProfile(task.fields.worktree);
-    if (profile.name !== task.fields.repo) throw new Error(`task says repo ${task.fields.repo} but ${task.fields.worktree} is ${profile.name}`);
+    if (profile.name !== task.fields.repo) throw inputError(`task says repo ${task.fields.repo} but ${task.fields.worktree} is ${profile.name}`);
     const standardsPath = path.join(root, 'STANDARDS.md');
     const standards = readFileSync(standardsPath, 'utf8').replace(/^# .*\n+/, '').trim();
     const template = readFileSync(path.join(root, 'briefs', `${role}.md`), 'utf8');
