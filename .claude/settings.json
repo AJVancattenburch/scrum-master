@@ -1,4 +1,12 @@
 {
   "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" },
-  "permissions": { "additionalDirectories": ["../monitiv-frontend", "../monitiv-gateway"] }
+  "permissions": { "additionalDirectories": ["../monitiv-frontend", "../monitiv-gateway"] },
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "developer",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/bin/stop-gate.mjs\"" }]
+      }
+    ]
+  }
 }
