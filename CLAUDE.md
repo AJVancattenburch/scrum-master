@@ -27,7 +27,7 @@ Pick a lane when the user approves the plan; lanes only move up.
 | L | >1 PR, both repos, or an `openapi.yaml` change | One `team-lead` per repo |
 
 - Write the task to `tickets/tasks/<id>.md`; its checklist (with SHAs) is the task state. Brief every helper with `node bin/brief.mjs <role> <task-file>` and use the `MODEL:` it prints. Reports are named `<id>-<role>.md`, so give each developer pass its own task id.
-- Accept work only on `node bin/gate.mjs <worktree>` exit 0 plus a reviewer PASS; a self-report is never the gate. Check `.superpowers/stop-gate/*.failed` after each developer.
+- Accept work only on `node bin/gate.mjs <worktree>` exit 0 plus a reviewer PASS; a self-report is never the gate. Check `.superpowers/stop-gate/*.failed` after each developer. Shut down each helper, teammate or subagent, as soon as its work is accepted; keep only helpers with a named next use.
 - Never read delegated code. At most 3 long-running agents at once, parallel developers included; after a 402, run everything sequentially. Run the orchestrator in the foreground in iTerm2 or tmux and spawn your helpers as named teammates so each gets a visible pane; a background-job orchestrator puts teammates on a detached tmux server instead.
 
 ## Board
