@@ -84,9 +84,9 @@ Add an Artifact under `artifacts/<feature>/`:
 
 - `link.txt`: the Artifact share link (required).
 - `source.jsx`: the Artifact source.
-- `config.json` (optional; defaults shown):
+- `config.json` (optional; defaults shown). `hide` masks selectors in both captures, `remove` takes them out of the layout, and `navigate` clicks selectors in order on the Artifact only:
   ```json
-  { "viewports": [{ "width": 1440, "height": 900 }, { "width": 390, "height": 844 }], "threshold": 0.001 }
+  { "viewports": [{ "width": 1440, "height": 900 }, { "width": 390, "height": 844 }], "threshold": 0.001, "hide": [], "remove": [], "navigate": [] }
   ```
 
 Put ticket markdown in `tickets/`.
@@ -98,6 +98,26 @@ node bin/pixel-diff.mjs <feature> http://localhost:<port>/<route>
 ```
 
 It prints one line per viewport (`1440x900  0.0123%  PASS  artifacts/<feature>/diff-1440x900.png`) and exits 1 if any viewport fails. The first capture is cached as `baseline-WxH.png`; if the link is unreachable the cached baseline is used and the line ends with `(baseline)`. Delete `baseline-*.png` when the Artifact is intentionally updated.
+
+Brief a helper from a task file (front matter `id`, `repo`, `worktree`, `lane`; optional `feature`, `url`, `complex`). It prints `MODEL: <model>` then the brief:
+
+```sh
+node bin/brief.mjs <developer|reviewer|tester|team-lead> tickets/tasks/<id>.md
+```
+
+Gate a worktree with its repo's diff-audit, checks and pixel diffs. It prints a short PASS/FAIL summary, writes step logs under `.superpowers/gate/`, and exits 0 pass, 1 fail, 2 input or infrastructure error:
+
+```sh
+node bin/gate.mjs <worktree> [--feature <name> --url <url>]...
+```
+
+Audit only the comment and file-growth rules against `origin/<baseBranch>` (or a given ref):
+
+```sh
+node bin/diff-audit.mjs <worktree> [base-ref]
+```
+
+`bin/stop-gate.mjs` runs as the `SubagentStop` hook for developers (`.claude/settings.json`). It blocks a developer whose report lacks a `WORKTREE:` line, whose worktree has uncommitted work, or whose diff-audit fails, up to twice; then it writes `.superpowers/stop-gate/<agent>.failed`.
 
 Run the tests:
 
