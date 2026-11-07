@@ -10,7 +10,7 @@ The task the diff must satisfy:
 {{task}}
 
 Search the repo for existing code that each new function, component or type duplicates. Check every file's growth in `git -C {{worktree}} diff --numstat {{baseRef}}...HEAD`.
-Run each command exactly as written; do not compose shell variables, pipes or loops.
+Do not run tests, builds or the gate; the gate already ran them. Run each command exactly as written; do not compose shell variables, pipes or loops.
 
 Stop and report instead of continuing if:
 {{escalations}}
