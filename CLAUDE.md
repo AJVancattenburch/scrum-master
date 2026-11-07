@@ -18,11 +18,18 @@ Advance a task only when its exit criterion holds:
 
 ## Team
 
-- Small work: do it yourself or use one subagent.
-- Complex single-repo work: one `team-lead` teammate.
-- Parallel frontend + backend: two `team-lead` teammates, who message each other on any `openapi.yaml` change.
-- Depth stops at developer/tester/reviewer.
-- Every spawn brief names the target repo and the absolute path of this repo's `STANDARDS.md`.
+Pick a lane when the user approves the plan; lanes only move up.
+
+| Lane | Fits when | Agents |
+|---|---|---|
+| S | One package, ≤~150 lines, no contract or shared state | 1 developer, then a reviewer |
+| M | One repo, one PR | Sequential developer passes of ≤~400 lines, a tester, then a reviewer; no lead. After a shared base unit is reviewed and accepted, disjoint-file units may run as ≤3 parallel developers, each in its own worktree branched from the accepted base unit; if a worktree cannot be created (e.g. the orchestrator session is pinned to a worktree), run the units sequentially in one worktree instead. |
+| L | >1 PR, both repos, or an `openapi.yaml` change | One `team-lead` per repo; teammates only for parallel frontend + gateway |
+
+- Write the task to `tickets/tasks/<id>.md`; its checklist (with SHAs) is the task state. Brief every helper with `node bin/brief.mjs <role> <task-file>` and use the `MODEL:` it prints.
+- Accept work only on `node bin/gate.mjs <worktree>` exit 0 plus a reviewer PASS; a self-report is never the gate. Check `.superpowers/stop-gate/*.failed` after each developer.
+- Never read delegated code. At most 2 long-running agents; after a 402, run everything sequentially. Run the orchestrator itself interactively (iTerm2 or tmux) to see teammate panes — backgrounded, it spawns teammates on a detached tmux server.
+- Each repo's workflow lives in `config/repos.json` and that repo's own `CLAUDE.md`; never carry one repo's conventions into the other.
 
 ## Board
 
