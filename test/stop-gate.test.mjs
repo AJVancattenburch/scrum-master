@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -62,11 +62,21 @@ test('a passing audit clears the agent\'s block count and failed marker', (t) =>
   assert.ok(!existsSync(path.join(dir, 'a1.json')));
 });
 
-test('invalid input exits 1 with a message and never blocks silently', (t) => {
+test('uncommitted work blocks, because the audit only sees commits', (t) => {
+  const repo = makeTempRepo('monitiv-gateway', t);
+  writeFileSync(path.join(repo, 'a.go'), 'package a\n');
+  const r = JSON.parse(hook(state(t), { agent_id: 'a1', last_assistant_message: `WORKTREE: ${repo}` }).stdout);
+  assert.equal(r.decision, 'block');
+  assert.match(r.reason, /Commit your work/);
+});
+
+test('invalid input exits 1 with a message and a failed marker, never a silent pass', (t) => {
   const dir = state(t);
   const bad = hook(dir, 'not json');
   assert.equal(bad.status, 1);
   assert.match(bad.stderr, /stop-gate: /);
+  const [marker] = readdirSync(dir).filter((f) => /^hook-error-\d+\.failed$/.test(f));
+  assert.match(readFileSync(path.join(dir, marker), 'utf8'), /^GATE: FAILED\nstop-gate: /);
   assert.equal(hook(dir, { last_assistant_message: 'x' }).status, 1);
   assert.ok(!existsSync(path.join(dir, 'undefined')));
 });
