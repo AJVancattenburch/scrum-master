@@ -11,9 +11,9 @@ Advance a task only when its exit criterion holds:
 1. `capture`: share link, Artifact source and viewports in `artifacts/<feature>/`; ticket markdown in `tickets/`.
 2. `contract`: gateway drafts path and schema in `api/openapi.yaml` on a branch; frontend runs `gen:api`.
 3. `build`: Artifact ported to Svelte 5 + Tailwind v4, reusing `@monitiv/ui` and `@monitiv/features` first. Dummy data is a typed fixture against the generated types behind a `FEATURE_*` flag (the `mock-community-alerts.ts` pattern).
-4. `verify`: pixel-diff passes; behavior matches the Artifact source; `pnpm check`, `pnpm lint`, `pnpm test` pass.
+4. `verify`: pixel diff and behavior match the Artifact; `node bin/gate.mjs <worktree>` passes.
 5. `data-needs`: every fixture field needing real data has a board entry.
-6. `backend`: gateway implements the spec until `TestRoutesMatchOpenAPI` and `make test` pass; the flag flips to live data.
+6. `backend`: gateway implements the spec until `node bin/gate.mjs <worktree>` passes; the flag flips to live data.
 7. `done`
 
 ## Team
@@ -28,8 +28,7 @@ Pick a lane when the user approves the plan; lanes only move up.
 
 - Write the task to `tickets/tasks/<id>.md`; its checklist (with SHAs) is the task state. Brief every helper with `node bin/brief.mjs <role> <task-file>` and use the `MODEL:` it prints.
 - Accept work only on `node bin/gate.mjs <worktree>` exit 0 plus a reviewer PASS; a self-report is never the gate. Check `.superpowers/stop-gate/*.failed` after each developer.
-- Never read delegated code. At most 2 long-running agents; after a 402, run everything sequentially. Run the orchestrator itself interactively (iTerm2 or tmux) to see teammate panes — backgrounded, it spawns teammates on a detached tmux server.
-- Each repo's workflow lives in `config/repos.json` and that repo's own `CLAUDE.md`; never carry one repo's conventions into the other.
+- Never read delegated code. At most 3 long-running agents at once, parallel developers included; after a 402, run everything sequentially. Run the orchestrator itself interactively (iTerm2 or tmux) to see teammate panes — backgrounded, it spawns teammates on a detached tmux server.
 
 ## Board
 

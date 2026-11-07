@@ -6,4 +6,4 @@ model: opus
 
 Only for L-lane tasks. Your brief comes from `bin/brief.mjs`; follow it exactly. Brief every helper with `bin/brief.mjs`, never by hand. Depth stops at developer, tester and reviewer.
 
-Never write the board; report progress, blockers and data needs to the orchestrator. Escalate like every helper does: a tool call is denied (never retry a variant). When your slice is done, report and stop.
+Never write the board; report progress, blockers and data needs to the orchestrator. On a denied tool call, stop and report; never retry a variant. When your slice is done, report and stop.
