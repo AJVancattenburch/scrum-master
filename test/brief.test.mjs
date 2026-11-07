@@ -5,20 +5,19 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { assertBriefFits, briefVars, MAX_BRIEF_LINES, modelFor, parseTask, renderTemplate } from '../lib/brief.mjs';
+import { assertBriefFits, briefVars, MAX_BRIEF_LINES, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
 import { loadProfiles } from '../lib/repo-profile.mjs';
 import { makeTempRepo } from './helpers/temp-repo.mjs';
 
 const profiles = loadProfiles();
 const template = (role) => readFileSync(new URL(`../briefs/${role}.md`, import.meta.url), 'utf8');
-const ROLES = ['developer', 'reviewer', 'tester', 'team-lead'];
 const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const BIN = path.join(ROOT, 'bin', 'brief.mjs');
 const taskText = (repo, extra = '', worktree = '/abs/wt') => `---\nid: T9\nrepo: ${repo}\nworktree: ${worktree}\nlane: M\n${extra}---\n## Goal\nDo it.\n`;
 
 const brief = (role, repo, extra) => {
   const task = parseTask(taskText(repo, extra));
-  const vars = briefVars({ role, task, profile: { name: repo, ...profiles[repo] }, standards: '- KISS', standardsPath: '/abs/STANDARDS.md', root: '/abs/sm' });
+  const vars = briefVars({ role, task, profile: { name: repo, ...profiles[repo] }, standards: '- KISS', standardsPath: '/abs/STANDARDS.md', root: '/abs/sm', taskFile: '/abs/sm/tickets/tasks/T9.md' });
   return renderTemplate(template(role), vars);
 };
 
@@ -46,6 +45,9 @@ test('parseTask reads fields and body, and rejects missing or invalid fields', (
   assert.throws(() => parseTask('---\nid: T1\n---\n'), /missing repo, worktree, lane/);
   assert.throws(() => parseTask(taskText('monitiv-gateway').replace('lane: M', 'lane: X')), /lane must be S, M or L/);
   assert.throws(() => parseTask(taskText('monitiv-gateway').replace('/abs/wt', 'rel/wt')), /absolute/);
+  assert.throws(() => parseTask(taskText('monitiv-frontend', 'url: http://x/?a=1&b=2\n')), /url must not contain whitespace or shell metacharacters/);
+  assert.throws(() => parseTask(taskText('monitiv-frontend', 'feature: a b\n')), /feature must not contain/);
+  assert.equal(parseTask(taskText('monitiv-frontend', 'url: http://localhost:5174/insight/br\n')).fields.url, 'http://localhost:5174/insight/br');
 });
 
 test('modelFor follows the lane table', () => {
@@ -75,6 +77,20 @@ test('every brief carries the standards, the escalations and the report path', (
   assert.match(brief('developer', 'monitiv-gateway'), /WORKTREE: \/abs\/wt\nREPORT: /);
 });
 
+test('every template writes the full report with the Write tool and caps the returned message at 15 lines', () => {
+  for (const role of ROLES) {
+    assert.match(template(role), /with the Write tool to `{{reportPath}}`/, role);
+    const caps = [...template(role).matchAll(/return at most (\d+) lines/g)].map(([, n]) => Number(n));
+    assert.equal(caps.length, 1, role);
+    assert.ok(caps[0] <= 15, `${role} returns ${caps[0]} lines`);
+  }
+});
+
+test('reviewer and tester may not change the worktree but may write their report', () => {
+  assert.match(template('reviewer'), /Do not edit anything in `{{worktree}}`\./);
+  assert.match(template('tester'), /Do not fix anything in `{{worktree}}`; report it\./);
+});
+
 test('developer and team-lead briefs pin the profile base branch', () => {
   for (const role of ['developer', 'team-lead']) {
     assert.match(brief(role, 'monitiv-gateway'), /Branch from, diff against and open PRs into `dev` only\./, role);
@@ -83,7 +99,14 @@ test('developer and team-lead briefs pin the profile base branch', () => {
 
 test('the team-lead brief allows up to 3 parallel developers on disjoint files', () => {
   assert.match(brief('team-lead', 'monitiv-gateway'), /up to 3 parallel developers/);
-  assert.match(brief('team-lead', 'monitiv-gateway'), /shared base commit/);
+  assert.match(brief('team-lead', 'monitiv-gateway'), /accepted before any parallel developer starts/);
+});
+
+test('the team-lead brief prints literal brief commands for the real roles and task file', () => {
+  const text = brief('team-lead', 'monitiv-gateway');
+  for (const role of ['developer', 'tester', 'reviewer']) {
+    assert.ok(text.includes(`\`node /abs/sm/bin/brief.mjs ${role} /abs/sm/tickets/tasks/T9.md\``), role);
+  }
 });
 
 test('every command in a brief is one literal command', () => {
@@ -91,7 +114,7 @@ test('every command in a brief is one literal command', () => {
     assert.match(template(role), /Run each command exactly as written; do not compose shell variables, pipes or loops\./, role);
     const text = brief(role, 'monitiv-frontend', 'feature: f\nurl: http://x\n');
     for (const [, cmd] of text.matchAll(/`([^`]+)`/g)) {
-      assert.doesNotMatch(cmd, /\$|\||&&|;|\bcd\b|\bfor\b|\bwhile\b/, `${role}: ${cmd}`);
+      assert.doesNotMatch(cmd, /\$|\||&&|;|<|>|\bcd\b|\bfor\b|\bwhile\b/, `${role}: ${cmd}`);
     }
   }
 });
@@ -136,12 +159,18 @@ test('CLI picks sonnet for a reviewer of an empty diff', (t) => {
   assert.match(stdout, /^MODEL: sonnet\n/);
 });
 
-test('CLI exits 2 with usage, an unknown role, or an oversized brief', (t) => {
+test('CLI exits 2 with usage, an unknown role, a role outside the lane, or an oversized brief', (t) => {
   assert.equal(runCli([]).code, 2);
   const repo = makeTempRepo('monitiv-gateway', t);
-  const unknown = runCli(['nope', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]);
-  assert.equal(unknown.code, 2);
-  assert.ok(unknown.stderr.includes(path.join(ROOT, 'briefs', 'nope.md')));
+  const taskFile = writeTaskFile(t, taskText('monitiv-gateway', '', repo));
+  for (const role of ['nope', '../README']) {
+    const unknown = runCli([role, taskFile]);
+    assert.equal(unknown.code, 2, role);
+    assert.match(unknown.stderr, /usage: brief\.mjs/, role);
+  }
+  const lead = runCli(['team-lead', taskFile]);
+  assert.equal(lead.code, 2);
+  assert.match(lead.stderr, /no team-lead in lane M/);
   const big = writeTaskFile(t, taskText('monitiv-gateway', '', repo) + '- line\n'.repeat(MAX_BRIEF_LINES));
   const oversized = runCli(['developer', path.relative(process.cwd(), big)]);
   assert.equal(oversized.code, 2);

@@ -17,7 +17,7 @@ Before reporting, run `{{auditCommand}}` and fix every blocking finding.
 Stop and report instead of continuing if:
 {{escalations}}
 
-Write your full report to `{{reportPath}}`: what now works, commits (SHA and subject), `git -C {{worktree}} diff --numstat {{baseRef}}...HEAD` with one justification per file, anything unresolved.
-Then return at most 20 lines summarizing it. The last two lines must be exactly:
+Write your full report with the Write tool to `{{reportPath}}`: what now works, commits (SHA and subject), `git -C {{worktree}} diff --numstat {{baseRef}}...HEAD` with one justification per file, anything unresolved.
+Then return at most 15 lines summarizing it. The last two lines must be exactly:
 WORKTREE: {{worktree}}
 REPORT: {{reportPath}}

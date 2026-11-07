@@ -2,16 +2,16 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertBriefFits, briefVars, modelFor, parseTask, renderTemplate } from '../lib/brief.mjs';
+import { assertBriefFits, briefVars, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
 import { addedLineCount } from '../lib/diff-audit.mjs';
 import { resolveProfile } from '../lib/repo-profile.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const USAGE = 'usage: brief.mjs <developer|reviewer|tester|team-lead> <task-file>';
-const INPUT_ERRORS = ['ENOENT', 'EBRIEFSIZE'];
+const USAGE = `usage: brief.mjs <${ROLES.join('|')}> <task-file>`;
+const INPUT_ERRORS = ['ENOENT', 'EINPUT'];
 
 function main([role, taskArg]) {
-  if (!role || !taskArg) {
+  if (!ROLES.includes(role) || !taskArg) {
     console.error(USAGE);
     return 2;
   }
@@ -25,7 +25,7 @@ function main([role, taskArg]) {
     const template = readFileSync(path.join(root, 'briefs', `${role}.md`), 'utf8');
     const diffLines = role === 'reviewer' ? addedLineCount(task.fields.worktree, profile) : undefined;
     const model = modelFor(role, task.fields.lane, { complex: task.fields.complex === 'true', diffLines });
-    const output = `MODEL: ${model}\n\n${renderTemplate(template, briefVars({ role, task, profile, standards, standardsPath, root }))}`;
+    const output = `MODEL: ${model}\n\n${renderTemplate(template, briefVars({ role, task, profile, standards, standardsPath, root, taskFile }))}`;
     assertBriefFits(output, taskFile);
     console.log(output);
     return 0;
