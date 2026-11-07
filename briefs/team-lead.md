@@ -13,11 +13,7 @@ Task:
 Split the task into units that own disjoint files. Brief each helper with one of these commands and use the MODEL line it prints:
 {{briefCommands}}
 For a unit, write its task file next to `{{taskFile}}` with its own id and worktree, and pass that file's absolute path as the last argument instead.
-For each unit, run developer, then tester, then reviewer, one long-running helper at a time, with this exception:
-1. If units build on a shared base unit, that unit must be reviewed and accepted before any parallel developer starts.
-2. Then up to 3 parallel developers may work on units that own disjoint files, each in its own worktree branched from the accepted base commit.
-3. Merge their branches in unit order, each after its tester and reviewer PASS.
-If a worktree cannot be created, run the units sequentially in one worktree instead.
+For each unit, run developer, then tester, then reviewer, one long-running helper at a time.
 Never edit code, run gates or read whole diffs yourself; the tester and reviewer do that. Accept a unit only on a gate PASS from the tester and a PASS from the reviewer.
 Run each command exactly as written; do not compose shell variables, pipes or loops.
 If another lead owns the other repo, message it on every API contract change.

@@ -106,11 +106,14 @@ test('developer and team-lead briefs pin the profile base branch', () => {
   }
 });
 
-test('the team-lead brief allows up to 3 parallel developers on disjoint files', () => {
-  assert.match(brief('team-lead', 'monitiv-gateway'), /up to 3 parallel developers/);
-  assert.match(brief('team-lead', 'monitiv-gateway'), /accepted before any parallel developer starts/);
-  assert.match(brief('team-lead', 'monitiv-gateway'), /If a worktree cannot be created, run the units sequentially in one worktree instead\./);
-  assert.doesNotMatch(brief('team-lead', 'monitiv-gateway'), /does not exist yet/);
+test('the team-lead brief runs one long-running helper at a time, never parallel developers', () => {
+  const text = brief('team-lead', 'monitiv-gateway');
+  assert.match(text, /then reviewer, one long-running helper at a time\./);
+  assert.doesNotMatch(text, /parallel|does not exist yet/);
+});
+
+test('only helper briefs escalate an API contract change; L leads exist for them', () => {
+  for (const role of ROLES) assert.equal(/change to the API contract/.test(brief(role, 'monitiv-gateway')), role !== 'team-lead', role);
 });
 
 test('the team-lead brief prints literal brief commands for the real roles and task file', () => {
