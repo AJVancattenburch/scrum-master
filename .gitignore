@@ -7,3 +7,4 @@ tickets/*
 !tickets/.gitkeep
 docs/superpowers/
 test-results/
+.claude/worktrees/
