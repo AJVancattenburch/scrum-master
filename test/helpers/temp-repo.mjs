@@ -1,11 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 const run = (cwd, ...args) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
 
-export function makeTempRepo(repoName) {
+export function makeTempRepo(repoName, t) {
   const dir = mkdtempSync(path.join(tmpdir(), `${repoName}-`));
   run(dir, 'init', '-q', '-b', 'dev');
   run(dir, 'config', 'user.email', 'test@example.com');
@@ -15,6 +15,7 @@ export function makeTempRepo(repoName) {
   run(dir, 'add', '.');
   run(dir, 'commit', '-q', '-m', 'base');
   run(dir, 'update-ref', 'refs/remotes/origin/dev', 'HEAD');
+  t?.after(() => rmSync(dir, { recursive: true, force: true }));
   return dir;
 }
 

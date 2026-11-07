@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
 import { addedLineCount, auditDiff, auditWorktree, blockingFindings, formatFinding, parseAddedLines } from '../lib/diff-audit.mjs';
 import { loadProfiles } from '../lib/repo-profile.mjs';
@@ -51,10 +52,32 @@ test('an unparseable hunk header throws', () => {
   assert.throws(() => parseAddedLines('+++ b/a.ts\n@@ garbage @@'), /unparseable hunk header/);
 });
 
-test('auditWorktree diffs HEAD against origin/<baseBranch>', () => {
-  const repo = makeTempRepo('monitiv-frontend');
+test('auditWorktree diffs HEAD against origin/<baseBranch>', (t) => {
+  const repo = makeTempRepo('monitiv-frontend', t);
   commitFile(repo, 'a.ts', '// one\n// two\n// three\nexport const x = 1;\n');
   const findings = auditWorktree(repo, profiles['monitiv-frontend']);
   assert.equal(formatFinding(findings[0]), 'comment-block\ta.ts:1\t3\t// one');
   assert.equal(addedLineCount(repo, profiles['monitiv-frontend']), 4);
+});
+
+test('addedLineCount accepts an explicit base-ref, like auditWorktree', (t) => {
+  const repo = makeTempRepo('monitiv-frontend', t);
+  commitFile(repo, 'a.ts', 'const x = 1;\n');
+  const head = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  commitFile(repo, 'b.ts', 'const y = 2;\nconst z = 3;\n');
+  assert.equal(addedLineCount(repo, profiles['monitiv-frontend'], head), 2);
+  assert.equal(addedLineCount(repo, profiles['monitiv-frontend']), 3);
+});
+
+test('codeExtensions are escaped so "." only matches a literal dot', () => {
+  const audit = { codeExtensions: ['t.s'], maxCommentRun: 2, maxFileGrowth: 200, phiTag: 'data classification' };
+  assert.deepEqual(auditDiff(diff('file.tXs', 1, ['// one', '// two', '// three']), audit), []);
+  assert.equal(auditDiff(diff('file.t.s', 1, ['// one', '// two', '// three']), audit).length, 1);
+});
+
+test('phiTag is escaped so "." only matches a literal dot, and must follow the comment marker', () => {
+  const dotAudit = { ...FE, phiTag: 'a.b' };
+  assert.deepEqual(auditDiff(diff('x.ts', 1, ['// a.b']), dotAudit), []);
+  assert.equal(auditDiff(diff('x.ts', 1, ['// axb']), dotAudit).length, 1);
+  assert.equal(auditDiff(diff('x.ts', 1, ['// TODO data classification later']), FE).length, 1);
 });

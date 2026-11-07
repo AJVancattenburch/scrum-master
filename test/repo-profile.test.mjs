@@ -8,6 +8,11 @@ test('repoNameFromRemote reads ssh and https remotes', () => {
   assert.equal(repoNameFromRemote('https://github.com/org/monitiv-gateway'), 'monitiv-gateway');
 });
 
+test('repoNameFromRemote handles a trailing slash and an scp remote with no .git', () => {
+  assert.equal(repoNameFromRemote('https://github.com/org/monitiv-frontend/'), 'monitiv-frontend');
+  assert.equal(repoNameFromRemote('git@github.com:org/monitiv-gateway'), 'monitiv-gateway');
+});
+
 test('every profile has the fields the scripts rely on', () => {
   for (const [name, p] of Object.entries(loadProfiles())) {
     assert.ok(p.baseBranch && p.readFirst.length && p.gates.length && p.verification.length, name);
@@ -16,12 +21,12 @@ test('every profile has the fields the scripts rely on', () => {
   }
 });
 
-test('resolveProfile picks the profile named by the origin remote', () => {
-  const profile = resolveProfile(makeTempRepo('monitiv-gateway'));
+test('resolveProfile picks the profile named by the origin remote', (t) => {
+  const profile = resolveProfile(makeTempRepo('monitiv-gateway', t));
   assert.equal(profile.name, 'monitiv-gateway');
   assert.equal(profile.pixelDiff, false);
 });
 
-test('an unknown repo throws instead of falling back', () => {
-  assert.throws(() => resolveProfile(makeTempRepo('some-other-repo')), /no profile for repo "some-other-repo"/);
+test('an unknown repo throws instead of falling back', (t) => {
+  assert.throws(() => resolveProfile(makeTempRepo('some-other-repo', t)), /no profile for repo "some-other-repo"/);
 });
