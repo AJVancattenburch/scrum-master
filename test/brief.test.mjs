@@ -169,7 +169,7 @@ test('CLI prints the model (sonnet for a reviewer of an empty diff), an absolute
   assert.match(reviewer.stdout, /^MODEL: sonnet\n/);
 });
 
-test('CLI exits 2 on bad input: usage, role, lane, brief size, task file, id or task path', (t) => {
+test('CLI exits 2 on bad input: usage, role, lane, brief size, task file, id, task path or worktree', (t) => {
   assert.equal(runCli([]).code, 2);
   const repo = makeTempRepo('monitiv-gateway', t);
   const taskFile = writeTaskFile(t, taskText('monitiv-gateway', '', repo));
@@ -189,6 +189,7 @@ test('CLI exits 2 on bad input: usage, role, lane, brief size, task file, id or 
     writeTaskFile(t, '## Goal\nno header\n'),
     writeTaskFile(t, taskText('monitiv-gateway', '', repo).replace('id: T9', 'id: ../x')),
     writeTaskFile(t, taskText('monitiv-gateway', '', repo), 'brief task '),
+    writeTaskFile(t, taskText('monitiv-gateway', '', path.join(repo, 'missing'))),
   ];
   for (const file of invalid) assert.equal(runCli(['developer', file]).code, 2, file);
 });

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertBriefFits, assertShellLiteral, briefVars, inputError, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
+import { CommandError } from '../lib/command-error.mjs';
 import { addedLineCount } from '../lib/diff-audit.mjs';
 import { resolveProfile } from '../lib/repo-profile.mjs';
 
@@ -33,8 +34,13 @@ function main([role, taskArg]) {
     return 0;
   } catch (error) {
     console.error(`brief: ${error.message}`);
-    return INPUT_ERRORS.includes(error.code) ? 2 : 1;
+    return isInputError(error) ? 2 : 1;
   }
+}
+
+// A command that ran and failed was pointed at a bad worktree; one that never ran is a broken install.
+function isInputError(error) {
+  return error instanceof CommandError ? error.status !== null : INPUT_ERRORS.includes(error.code);
 }
 
 process.exitCode = main(process.argv.slice(2));
