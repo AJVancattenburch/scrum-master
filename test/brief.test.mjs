@@ -37,23 +37,21 @@ function writeTaskFile(t, text, prefix = 'brief-task-') {
   return file;
 }
 
-test('parseTask reads fields and body, and rejects missing or invalid fields', () => {
+test('parseTask reads fields and body, and rejects bad input as an input error', () => {
   const { fields, body } = parseTask(taskText('monitiv-gateway'));
   assert.equal(fields.lane, 'M');
   assert.match(body, /Do it/);
-  assert.throws(() => parseTask('## Goal\nno header'), /front matter/);
-  assert.throws(() => parseTask('---\nid: T1\n---\n'), /missing repo, worktree, lane/);
-  assert.throws(() => parseTask(taskText('monitiv-gateway').replace('lane: M', 'lane: X')), /lane must be S, M or L/);
-  assert.throws(() => parseTask(taskText('monitiv-gateway').replace('/abs/wt', 'rel/wt')), /absolute/);
-  assert.throws(() => parseTask(taskText('monitiv-gateway').replace('id: T9', 'id: ../../x')), /id must be letters, digits, _ or -/);
-  assert.throws(() => parseTask(taskText('monitiv-frontend', 'url: http://x/?a=1&b=2\n')), /url must not contain whitespace or shell metacharacters/);
-  assert.throws(() => parseTask(taskText('monitiv-frontend', 'feature: a b\n')), /feature must not contain/);
   assert.equal(parseTask(taskText('monitiv-frontend', 'url: http://localhost:5174/insight/br\n')).fields.url, 'http://localhost:5174/insight/br');
-});
-
-test('every parseTask rejection is an input error', () => {
-  const bad = ['## Goal', '---\nid: T1\n---\n', taskText('monitiv-gateway').replace('lane: M', 'lane: X'), taskText('monitiv-gateway', 'feature: a b\n')];
-  for (const text of bad) assert.throws(() => parseTask(text), { code: 'EINPUT' }, text);
+  const bad = [
+    ['## Goal\nno header', /front matter/],
+    ['---\nid: T1\n---\n', /missing repo, worktree, lane/],
+    [taskText('monitiv-gateway').replace('lane: M', 'lane: X'), /lane must be S, M or L/],
+    [taskText('monitiv-gateway').replace('/abs/wt', 'rel/wt'), /absolute/],
+    [taskText('monitiv-gateway').replace('id: T9', 'id: ../../x'), /id must be letters, digits, _ or -/],
+    [taskText('monitiv-frontend', 'url: http://x/?a=1&b=2\n'), /url must not contain whitespace or shell metacharacters/],
+    [taskText('monitiv-frontend', 'feature: a b\n'), /feature must not contain/],
+  ];
+  for (const [text, message] of bad) assert.throws(() => parseTask(text), { code: 'EINPUT', message }, text);
 });
 
 test('assertShellLiteral rejects a value a shell would split or expand', () => {
@@ -156,23 +154,17 @@ test('assertBriefFits rejects a brief over the line cap, naming the task file an
   assert.throws(() => assertBriefFits('x\n'.repeat(MAX_BRIEF_LINES + 1), '/abs/T9.md'), /\/abs\/T9\.md.*201 lines/);
 });
 
-test('CLI prints the model, an absolute report path under scrum-master and an absolute worktree', (t) => {
+test('CLI prints the model (sonnet for a reviewer of an empty diff), an absolute report path and worktree', (t) => {
   const repo = makeTempRepo('monitiv-gateway', t);
   const { code, stdout } = runCli(['developer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]);
   assert.equal(code, 0);
   assert.match(stdout, /^MODEL: opus\n/);
   assert.ok(stdout.includes(`REPORT: ${ROOT}/.superpowers/reports/T9-developer.md`));
   assert.ok(stdout.includes(`WORKTREE: ${repo}`));
+  assert.match(runCli(['reviewer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]).stdout, /^MODEL: sonnet\n/);
 });
 
-test('CLI picks sonnet for a reviewer of an empty diff', (t) => {
-  const repo = makeTempRepo('monitiv-gateway', t);
-  const { code, stdout } = runCli(['reviewer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]);
-  assert.equal(code, 0);
-  assert.match(stdout, /^MODEL: sonnet\n/);
-});
-
-test('CLI exits 2 with usage, an unknown role, a role outside the lane, or an oversized brief', (t) => {
+test('CLI exits 2 on bad input: usage, role, lane, brief size, task file, id or task path', (t) => {
   assert.equal(runCli([]).code, 2);
   const repo = makeTempRepo('monitiv-gateway', t);
   const taskFile = writeTaskFile(t, taskText('monitiv-gateway', '', repo));
@@ -188,16 +180,12 @@ test('CLI exits 2 with usage, an unknown role, a role outside the lane, or an ov
   const oversized = runCli(['developer', path.relative(process.cwd(), big)]);
   assert.equal(oversized.code, 2);
   assert.match(oversized.stderr, new RegExp(`${big.replace(/[.]/g, '\\.')}.* \\d+ lines`));
-});
-
-test('CLI exits 2 for an invalid task file, an escaping id, or a task path with a space', (t) => {
-  const repo = makeTempRepo('monitiv-gateway', t);
-  const cases = [
+  const invalid = [
     writeTaskFile(t, '## Goal\nno header\n'),
     writeTaskFile(t, taskText('monitiv-gateway', '', repo).replace('id: T9', 'id: ../x')),
     writeTaskFile(t, taskText('monitiv-gateway', '', repo), 'brief task '),
   ];
-  for (const file of cases) assert.equal(runCli(['developer', file]).code, 2, file);
+  for (const file of invalid) assert.equal(runCli(['developer', file]).code, 2, file);
 });
 
 test('CLI exits 1 when the task repo does not match the worktree', (t) => {
