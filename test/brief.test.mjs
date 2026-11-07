@@ -74,12 +74,13 @@ test('renderTemplate fails loudly on an unfilled placeholder', () => {
   assert.throws(() => renderTemplate('a {{y}}', { x: '1' }), /unfilled placeholder {{y}}/);
 });
 
-test('every brief carries the standards, the escalations and the report path', () => {
+test('every brief carries the standards, the escalations and the report path; only L leads may change the contract', () => {
   for (const role of ROLES) {
     const text = brief(role, 'monitiv-gateway');
     assert.match(text, /\/abs\/STANDARDS\.md/, role);
     assert.match(text, /- KISS/, role);
     assert.match(text, /real patient data/, role);
+    assert.equal(/change to the API contract/.test(text), role !== 'team-lead', role);
     assert.ok(text.includes(`/abs/sm/.superpowers/reports/T9-${role}.md`), role);
     assert.match(text.trimEnd(), new RegExp(`REPORT: /abs/sm/\\.superpowers/reports/T9-${role}\\.md$`), role);
   }
@@ -110,10 +111,6 @@ test('the team-lead brief runs one long-running helper at a time, never parallel
   const text = brief('team-lead', 'monitiv-gateway');
   assert.match(text, /then reviewer, one long-running helper at a time\./);
   assert.doesNotMatch(text, /parallel|does not exist yet/);
-});
-
-test('only helper briefs escalate an API contract change; L leads exist for them', () => {
-  for (const role of ROLES) assert.equal(/change to the API contract/.test(brief(role, 'monitiv-gateway')), role !== 'team-lead', role);
 });
 
 test('the team-lead brief prints literal brief commands for the real roles and task file', () => {
