@@ -102,3 +102,9 @@ test('gateSteps follows the profile and rejects pixel diffs where the repo has n
   assert.throws(() => gateSteps({ worktree: '/w', profile: gw, pixel: [{ feature: 'a', url: 'u' }], pixelScript: 'p' }), /no pixel diff/);
   assert.equal(gateSteps({ worktree: '/w', profile: fe, pixel: [{ feature: 'a', url: 'u' }], pixelScript: 'p' }).at(-1).name, 'pixel:a');
 });
+
+test('gateSteps fills {{baseRef}} in gate commands from the profile base branch', () => {
+  const gates = [{ name: 'echo', cmd: [process.execPath, '-e', 'console.log(process.argv[1])', 'rev={{baseRef}}'] }];
+  const [, echo] = gateSteps({ worktree: tmpdir(), profile: { name: 'x', baseBranch: 'dev', gates }, pixel: [], pixelScript: 'p' });
+  assert.equal(echo.run().output.trim(), 'rev=origin/dev');
+});
