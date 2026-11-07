@@ -52,6 +52,11 @@ try {
   console.error(`stop-gate: ${error.message}`);
   process.exitCode = 1;
   // Exit 1 lets a SubagentStop proceed, so the marker is what keeps the failure visible.
-  mkdirSync(stateDir, { recursive: true });
-  writeMarker(path.join(stateDir, `hook-error-${Date.now()}.failed`), `stop-gate: ${error.message}`);
+  try {
+    mkdirSync(stateDir, { recursive: true });
+    writeMarker(path.join(stateDir, `hook-error-${Date.now()}.failed`), `stop-gate: ${error.message}`);
+  } catch (markerError) {
+    // The original hook error must still reach stderr even if the marker itself can't be written.
+    console.error(`stop-gate: could not write marker: ${markerError.message}`);
+  }
 }

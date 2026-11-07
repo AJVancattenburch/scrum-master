@@ -80,3 +80,13 @@ test('invalid input exits 1 with a message and a failed marker, never a silent p
   assert.equal(hook(dir, { last_assistant_message: 'x' }).status, 1);
   assert.ok(!existsSync(path.join(dir, 'undefined')));
 });
+
+test('when the failure marker itself cannot be written, the original hook error still reaches stderr', (t) => {
+  const dir = state(t);
+  const blockedState = path.join(dir, 'not-a-dir');
+  writeFileSync(blockedState, '');
+  const { status, stderr } = hook(blockedState, 'not json');
+  assert.equal(status, 1);
+  assert.match(stderr, /stop-gate: /);
+  assert.match(stderr, /stop-gate: could not write marker: /);
+});
