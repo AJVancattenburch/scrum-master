@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertBriefFits, briefVars, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
+import { assertBriefFits, assertShellLiteral, briefVars, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
 import { addedLineCount } from '../lib/diff-audit.mjs';
 import { resolveProfile } from '../lib/repo-profile.mjs';
 
@@ -17,6 +17,8 @@ function main([role, taskArg]) {
   }
   const taskFile = path.resolve(taskArg);
   try {
+    assertShellLiteral('scrum-master root', root);
+    assertShellLiteral('task file path', taskFile);
     const task = parseTask(readFileSync(taskFile, 'utf8'));
     const profile = resolveProfile(task.fields.worktree);
     if (profile.name !== task.fields.repo) throw new Error(`task says repo ${task.fields.repo} but ${task.fields.worktree} is ${profile.name}`);

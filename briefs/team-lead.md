@@ -17,7 +17,7 @@ For each unit, run developer, then tester, then reviewer, one long-running helpe
 1. If units build on a shared base unit, that unit must be reviewed and accepted before any parallel developer starts.
 2. Then up to 3 parallel developers may work on units that own disjoint files, each in its own worktree branched from the accepted base commit.
 3. Merge their branches in unit order, each after its tester and reviewer PASS.
-If a unit's worktree does not exist yet, stop and report instead of creating it.
+If a worktree cannot be created, run the units sequentially in one worktree instead.
 Never edit code, run gates or read whole diffs yourself; the tester and reviewer do that. Accept a unit only on a gate PASS from the tester and a PASS from the reviewer.
 Run each command exactly as written; do not compose shell variables, pipes or loops.
 If another lead owns the other repo, message it on every API contract change.

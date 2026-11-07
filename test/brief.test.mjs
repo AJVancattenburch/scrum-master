@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { assertBriefFits, briefVars, MAX_BRIEF_LINES, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
+import { assertBriefFits, assertShellLiteral, briefVars, MAX_BRIEF_LINES, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
 import { loadProfiles } from '../lib/repo-profile.mjs';
 import { makeTempRepo } from './helpers/temp-repo.mjs';
 
@@ -29,8 +29,8 @@ function runCli(args) {
   }
 }
 
-function writeTaskFile(t, text) {
-  const dir = mkdtempSync(path.join(tmpdir(), 'brief-task-'));
+function writeTaskFile(t, text, prefix = 'brief-task-') {
+  const dir = mkdtempSync(path.join(tmpdir(), prefix));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const file = path.join(dir, 'T9.md');
   writeFileSync(file, text);
@@ -45,9 +45,20 @@ test('parseTask reads fields and body, and rejects missing or invalid fields', (
   assert.throws(() => parseTask('---\nid: T1\n---\n'), /missing repo, worktree, lane/);
   assert.throws(() => parseTask(taskText('monitiv-gateway').replace('lane: M', 'lane: X')), /lane must be S, M or L/);
   assert.throws(() => parseTask(taskText('monitiv-gateway').replace('/abs/wt', 'rel/wt')), /absolute/);
+  assert.throws(() => parseTask(taskText('monitiv-gateway').replace('id: T9', 'id: ../../x')), /id must be letters, digits, _ or -/);
   assert.throws(() => parseTask(taskText('monitiv-frontend', 'url: http://x/?a=1&b=2\n')), /url must not contain whitespace or shell metacharacters/);
   assert.throws(() => parseTask(taskText('monitiv-frontend', 'feature: a b\n')), /feature must not contain/);
   assert.equal(parseTask(taskText('monitiv-frontend', 'url: http://localhost:5174/insight/br\n')).fields.url, 'http://localhost:5174/insight/br');
+});
+
+test('every parseTask rejection is an input error', () => {
+  const bad = ['## Goal', '---\nid: T1\n---\n', taskText('monitiv-gateway').replace('lane: M', 'lane: X'), taskText('monitiv-gateway', 'feature: a b\n')];
+  for (const text of bad) assert.throws(() => parseTask(text), { code: 'EINPUT' }, text);
+});
+
+test('assertShellLiteral rejects a value a shell would split or expand', () => {
+  assert.doesNotThrow(() => assertShellLiteral('root', '/abs/scrum-master'));
+  assert.throws(() => assertShellLiteral('root', '/abs/my repo'), { code: 'EINPUT', message: /root must not contain whitespace/ });
 });
 
 test('modelFor follows the lane table', () => {
@@ -100,6 +111,8 @@ test('developer and team-lead briefs pin the profile base branch', () => {
 test('the team-lead brief allows up to 3 parallel developers on disjoint files', () => {
   assert.match(brief('team-lead', 'monitiv-gateway'), /up to 3 parallel developers/);
   assert.match(brief('team-lead', 'monitiv-gateway'), /accepted before any parallel developer starts/);
+  assert.match(brief('team-lead', 'monitiv-gateway'), /If a worktree cannot be created, run the units sequentially in one worktree instead\./);
+  assert.doesNotMatch(brief('team-lead', 'monitiv-gateway'), /does not exist yet/);
 });
 
 test('the team-lead brief prints literal brief commands for the real roles and task file', () => {
@@ -175,6 +188,16 @@ test('CLI exits 2 with usage, an unknown role, a role outside the lane, or an ov
   const oversized = runCli(['developer', path.relative(process.cwd(), big)]);
   assert.equal(oversized.code, 2);
   assert.match(oversized.stderr, new RegExp(`${big.replace(/[.]/g, '\\.')}.* \\d+ lines`));
+});
+
+test('CLI exits 2 for an invalid task file, an escaping id, or a task path with a space', (t) => {
+  const repo = makeTempRepo('monitiv-gateway', t);
+  const cases = [
+    writeTaskFile(t, '## Goal\nno header\n'),
+    writeTaskFile(t, taskText('monitiv-gateway', '', repo).replace('id: T9', 'id: ../x')),
+    writeTaskFile(t, taskText('monitiv-gateway', '', repo), 'brief task '),
+  ];
+  for (const file of cases) assert.equal(runCli(['developer', file]).code, 2, file);
 });
 
 test('CLI exits 1 when the task repo does not match the worktree', (t) => {
