@@ -74,13 +74,13 @@ test('renderTemplate fails loudly on an unfilled placeholder', () => {
   assert.throws(() => renderTemplate('a {{y}}', { x: '1' }), /unfilled placeholder {{y}}/);
 });
 
-test('every brief carries the standards, the escalations and the report path; only L leads may change the contract', () => {
+test('every brief carries the standards, the escalations and the report path, and every role escalates an unlisted contract change', () => {
   for (const role of ROLES) {
     const text = brief(role, 'monitiv-gateway');
     assert.match(text, /\/abs\/STANDARDS\.md/, role);
     assert.match(text, /- KISS/, role);
     assert.match(text, /real patient data/, role);
-    assert.equal(/change to the API contract/.test(text), role !== 'team-lead', role);
+    assert.match(text, /an API contract change that the task's plan items don't list/, role);
     assert.ok(text.includes(`/abs/sm/.superpowers/reports/T9-${role}.md`), role);
     assert.match(text.trimEnd(), new RegExp(`REPORT: /abs/sm/\\.superpowers/reports/T9-${role}\\.md$`), role);
   }
