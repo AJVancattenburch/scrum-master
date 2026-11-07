@@ -67,7 +67,7 @@ test('uncommitted work blocks, because the audit only sees commits', (t) => {
   writeFileSync(path.join(repo, 'a.go'), 'package a\n');
   const r = JSON.parse(hook(state(t), { agent_id: 'a1', last_assistant_message: `WORKTREE: ${repo}` }).stdout);
   assert.equal(r.decision, 'block');
-  assert.match(r.reason, /Commit your work/);
+  assert.match(r.reason, /Commit the task's changes and delete any scratch files/);
 });
 
 test('invalid input exits 1 with a message and a failed marker, never a silent pass', (t) => {
