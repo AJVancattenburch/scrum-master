@@ -1,7 +1,7 @@
 {
   "monitiv-frontend": {
     "baseBranch": "dev",
-    "readFirst": ["CLAUDE.md", "docs/adr/0004-pr-first-workflow.md"],
+    "readFirst": ["CLAUDE.md", ".github/pull_request_template.md", "docs/adr/0004-pr-first-workflow.md"],
     "gates": [
       { "name": "check", "cmd": ["pnpm", "check"] },
       { "name": "lint", "cmd": ["pnpm", "lint"] },
@@ -22,7 +22,7 @@
       { "name": "vet", "cmd": ["go", "vet", "./..."] },
       { "name": "lint", "cmd": ["golangci-lint", "run", "--new-from-rev=origin/dev", "--timeout=5m"] },
       { "name": "test", "cmd": ["make", "test"] },
-      { "name": "openapi", "cmd": ["npx", "--yes", "@redocly/cli@latest", "lint", "api/openapi.yaml"] },
+      { "name": "openapi", "cmd": ["npx", "--yes", "@redocly/cli@2.5.0", "lint", "api/openapi.yaml"] },
       { "name": "snowflake-db", "cmd": ["./scripts/check-snowflake-db-literals.sh"] }
     ],
     "pixelDiff": false,

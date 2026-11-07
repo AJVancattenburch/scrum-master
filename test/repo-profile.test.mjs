@@ -21,6 +21,17 @@ test('every profile has the fields the scripts rely on', () => {
   }
 });
 
+test('gate tools are pinned to the version the repo CI runs, never @latest', () => {
+  for (const [name, p] of Object.entries(loadProfiles())) {
+    for (const g of p.gates) assert.ok(!g.cmd.some((arg) => arg.endsWith('@latest')), `${name} ${g.name}`);
+  }
+  assert.ok(loadProfiles()['monitiv-gateway'].gates.some((g) => g.cmd.includes('@redocly/cli@2.5.0')));
+});
+
+test('the frontend profile reads the repo PR template first', () => {
+  assert.ok(loadProfiles()['monitiv-frontend'].readFirst.includes('.github/pull_request_template.md'));
+});
+
 test('resolveProfile picks the profile named by the origin remote', (t) => {
   const profile = resolveProfile(makeTempRepo('monitiv-gateway', t));
   assert.equal(profile.name, 'monitiv-gateway');
