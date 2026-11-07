@@ -1,0 +1,35 @@
+{
+  "monitiv-frontend": {
+    "baseBranch": "dev",
+    "readFirst": ["CLAUDE.md", "docs/adr/0004-pr-first-workflow.md"],
+    "gates": [
+      { "name": "check", "cmd": ["pnpm", "check"] },
+      { "name": "lint", "cmd": ["pnpm", "lint"] },
+      { "name": "test", "cmd": ["pnpm", "test"] }
+    ],
+    "pixelDiff": true,
+    "audit": { "codeExtensions": ["js", "mjs", "ts", "mts", "svelte"], "maxCommentRun": 2, "maxFileGrowth": 200, "phiTag": "data classification" },
+    "verification": [
+      "Run the pixel diff for every feature in the task; every viewport must pass.",
+      "Compare behavior with the task's prototype source: interactions, states, empty and error cases."
+    ]
+  },
+  "monitiv-gateway": {
+    "baseBranch": "dev",
+    "readFirst": ["CLAUDE.md", ".github/pull_request_template.md", "CONTRACT.md"],
+    "gates": [
+      { "name": "fmt", "cmd": ["golangci-lint", "fmt", "--diff"] },
+      { "name": "vet", "cmd": ["go", "vet", "./..."] },
+      { "name": "lint", "cmd": ["golangci-lint", "run", "--new-from-rev=main", "--timeout=5m"] },
+      { "name": "test", "cmd": ["make", "test"] },
+      { "name": "openapi", "cmd": ["npx", "--yes", "@redocly/cli@latest", "lint", "api/openapi.yaml"] },
+      { "name": "snowflake-db", "cmd": ["./scripts/check-snowflake-db-literals.sh"] }
+    ],
+    "pixelDiff": false,
+    "audit": { "codeExtensions": ["go"], "maxCommentRun": 2, "maxFileGrowth": 200, "phiTag": "data classification" },
+    "verification": [
+      "Every mounted route matches api/openapi.yaml (TestRoutesMatchOpenAPI passes) and responses match their schemas.",
+      "Prove each new test can fail: break the code it covers, watch it fail with the expected message, restore. Record this in the PR's Verification section."
+    ]
+  }
+}

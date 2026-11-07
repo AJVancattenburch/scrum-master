@@ -1,28 +1,22 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
-import { auditDiff, blockingFindings } from '../lib/diff-audit.mjs';
+import { auditWorktree, blockingFindings, formatFinding } from '../lib/diff-audit.mjs';
+import { resolveProfile } from '../lib/repo-profile.mjs';
 
-const USAGE = 'usage: diff-audit.mjs <repo-path> [base-ref=origin/dev]';
+const USAGE = 'usage: diff-audit.mjs <worktree> [base-ref=origin/<profile baseBranch>]';
 
-function main([repo, base = 'origin/dev']) {
-  if (!repo) {
+function main([worktree, base]) {
+  if (!worktree) {
     console.error(USAGE);
     return 2;
   }
-  let diff;
+  let findings;
   try {
-    diff = execFileSync('git', ['-C', repo, 'diff', '-U0', '--no-color', `${base}...HEAD`], {
-      encoding: 'utf8',
-      maxBuffer: 64 * 1024 * 1024,
-    });
+    findings = auditWorktree(worktree, resolveProfile(worktree), base);
   } catch (error) {
-    console.error(`git diff failed: ${error.message}`);
+    console.error(`diff-audit: ${error.message}`);
     return 2;
   }
-  const findings = auditDiff(diff);
-  for (const f of findings) {
-    console.log(`${f.kind}\t${f.file}:${f.line}\t${f.lines}\t${f.text}`);
-  }
+  for (const f of findings) console.log(formatFinding(f));
   const blocking = blockingFindings(findings);
   console.log(blocking.length ? `FAIL: ${blocking.length} blocking finding(s)` : 'PASS (justify any single comments listed above)');
   return blocking.length ? 1 : 0;
