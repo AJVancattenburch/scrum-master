@@ -10,7 +10,7 @@
     "pixelDiff": true,
     "audit": { "codeExtensions": ["js", "mjs", "ts", "mts", "svelte"], "maxCommentRun": 2, "maxFileGrowth": 200, "phiTag": "data classification" },
     "verification": [
-      "Run the pixel diff for every feature in the task; every viewport must pass.",
+      "Start the app per the repo's CLAUDE.md before the gate; the gate runs the pixel diff, and every viewport must pass.",
       "Compare behavior with the task's prototype source: interactions, states, empty and error cases."
     ]
   },
