@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -22,7 +22,7 @@ test('runGate runs every step after a failure, writes logs and fails overall', (
   assert.equal(ok, false);
   assert.match(summary, /^FAIL a\nPASS b\nFAIL boom\n {2}a: first error \(log: /);
   assert.match(summary, /boom: git missing/);
-  assert.equal(readFileSync(path.join(dir, 'b.log'), 'utf8'), 'fine');
+  assert.equal(readFileSync(path.join(dir, '1-b.log'), 'utf8'), 'fine');
 });
 
 test('runGate passes only when every step passes', () => {
@@ -34,7 +34,7 @@ test('a thrown step error logs the full stack but the summary keeps only the mes
   const thrower = { name: 'boom', run: () => { throw new Error('git missing'); } };
   const { summary } = runGate([thrower], dir);
   assert.match(summary, /boom: git missing/);
-  assert.match(readFileSync(path.join(dir, 'boom.log'), 'utf8'), /^Error: git missing\n {4}at /);
+  assert.match(readFileSync(path.join(dir, '0-boom.log'), 'utf8'), /^Error: git missing\n {4}at /);
 });
 
 test('runGate clears stale logs from a previous run before writing new ones', () => {
@@ -42,7 +42,17 @@ test('runGate clears stale logs from a previous run before writing new ones', ()
   writeFileSync(path.join(dir, 'stale.log'), 'old');
   runGate([step('a', true, 'fresh')], dir);
   assert.equal(existsSync(path.join(dir, 'stale.log')), false);
-  assert.equal(readFileSync(path.join(dir, 'a.log'), 'utf8'), 'fresh');
+  assert.equal(readFileSync(path.join(dir, '0-a.log'), 'utf8'), 'fresh');
+});
+
+test('runGate gives steps with colliding sanitized names distinct log files', () => {
+  const dir = logDir();
+  const { ok } = runGate([step('pixel:a/b', true, 'first'), step('pixel:a_b', true, 'second')], dir);
+  assert.equal(ok, true);
+  const files = readdirSync(dir).sort();
+  assert.deepEqual(files, ['0-pixel_a_b.log', '1-pixel_a_b.log']);
+  assert.equal(readFileSync(path.join(dir, '0-pixel_a_b.log'), 'utf8'), 'first');
+  assert.equal(readFileSync(path.join(dir, '1-pixel_a_b.log'), 'utf8'), 'second');
 });
 
 test('runGate does not swallow a log-directory infrastructure failure', (t) => {
