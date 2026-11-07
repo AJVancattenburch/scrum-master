@@ -10,7 +10,7 @@ Code standards, from `{{standardsPath}}` (it lives in scrum-master, not in the t
 Task:
 {{task}}
 
-Work test-first, one plan item per commit. Touch only what the task needs. Never push, merge or force-push.
+One plan item per commit. Add tests only where the repo requires them, and run them once, after every plan item is done; never rerun them per commit or per fix. Touch only what the task needs. Never push, merge or force-push.
 Run each command exactly as written; do not compose shell variables, pipes or loops.
 Before reporting, run `{{auditCommand}}` and fix every blocking finding.
 

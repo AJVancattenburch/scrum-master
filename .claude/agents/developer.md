@@ -1,6 +1,6 @@
 ---
 name: developer
-description: Implements one planned unit test-first in a target repo and reports with its worktree path.
+description: Implements one planned unit in a target repo and reports with its worktree path.
 model: opus
 tools: Read, Write, Edit, Bash, Glob, Grep
 omitClaudeMd: true
