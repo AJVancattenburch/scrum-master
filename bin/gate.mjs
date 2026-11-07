@@ -20,7 +20,14 @@ function main(argv) {
     console.error(error.message);
     return 2;
   }
-  const { ok, summary } = runGate(steps, logDir);
+  let ok;
+  let summary;
+  try {
+    ({ ok, summary } = runGate(steps, logDir));
+  } catch (error) {
+    console.error(`gate infrastructure error: ${error.message}`);
+    return 2;
+  }
   console.log(summary);
   return ok ? 0 : 1;
 }
