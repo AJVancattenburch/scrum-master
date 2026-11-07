@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { auditWorktree, blockingFindings, formatFinding } from '../lib/diff-audit.mjs';
@@ -32,7 +32,8 @@ function main() {
     writeFileSync(countPath, JSON.stringify(blocksSoFar + 1));
     process.stdout.write(JSON.stringify({ decision: 'block', reason }));
   } else if (action === 'give-up') {
-    writeFileSync(path.join(stateDir, `${id}.failed`), `GATE: FAILED\n${reason}\n`);
+    const markerPath = path.join(stateDir, `${id}.failed`);
+    if (!existsSync(markerPath)) writeFileSync(markerPath, `GATE: FAILED\n${reason}\n`);
   }
 }
 

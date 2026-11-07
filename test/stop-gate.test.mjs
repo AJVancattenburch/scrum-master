@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -11,7 +11,11 @@ import { commitFile, makeTempRepo } from './helpers/temp-repo.mjs';
 const cli = fileURLToPath(new URL('../bin/stop-gate.mjs', import.meta.url));
 const hook = (stateDir, payload) =>
   spawnSync(process.execPath, [cli], { input: typeof payload === 'string' ? payload : JSON.stringify(payload), encoding: 'utf8', env: { ...process.env, STOP_GATE_STATE: stateDir } });
-const state = () => mkdtempSync(path.join(tmpdir(), 'stop-gate-'));
+const state = (t) => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'stop-gate-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  return dir;
+};
 
 test('worktreeFrom reads the WORKTREE line anywhere in the report', () => {
   assert.equal(worktreeFrom('done\nWORKTREE: /a/b \n'), '/a/b');
@@ -25,17 +29,17 @@ test('decide blocks up to MAX_BLOCKS, then gives up', () => {
   assert.equal(decide({ blocksSoFar: MAX_BLOCKS, problem: 'x' }).action, 'give-up');
 });
 
-test('a clean worktree is allowed with no output', () => {
-  const repo = makeTempRepo('monitiv-gateway');
+test('a clean worktree is allowed with no output', (t) => {
+  const repo = makeTempRepo('monitiv-gateway', t);
   commitFile(repo, 'a.go', 'package a\n');
-  const r = hook(state(), { agent_id: 'a1', last_assistant_message: `ok\nWORKTREE: ${repo}` });
+  const r = hook(state(t), { agent_id: 'a1', last_assistant_message: `ok\nWORKTREE: ${repo}` });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout, '');
 });
 
-test('a missing WORKTREE line or a failing audit blocks twice per agent, then writes the failed marker', () => {
-  const dir = state();
-  const repo = makeTempRepo('monitiv-gateway');
+test('a missing WORKTREE line or a failing audit blocks twice per agent, then writes the failed marker', (t) => {
+  const dir = state(t);
+  const repo = makeTempRepo('monitiv-gateway', t);
   commitFile(repo, 'a.go', '// one\n// two\n// three\npackage a\n');
   const first = JSON.parse(hook(dir, { agent_id: 'a1', last_assistant_message: 'no line' }).stdout);
   assert.equal(first.decision, 'block');
@@ -48,8 +52,8 @@ test('a missing WORKTREE line or a failing audit blocks twice per agent, then wr
   assert.equal(JSON.parse(hook(dir, { agent_id: 'a2', last_assistant_message: 'no line' }).stdout).decision, 'block');
 });
 
-test('invalid input exits 1 with a message and never blocks silently', () => {
-  const dir = state();
+test('invalid input exits 1 with a message and never blocks silently', (t) => {
+  const dir = state(t);
   const bad = hook(dir, 'not json');
   assert.equal(bad.status, 1);
   assert.match(bad.stderr, /stop-gate: /);
