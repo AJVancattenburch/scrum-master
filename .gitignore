@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 board.json
 board.json.tmp-*
 artifacts/*
@@ -8,3 +8,4 @@ tickets/*
 docs/superpowers/
 test-results/
 .DS_Store
+.superpowers/
