@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
-import { addedLineCount, auditDiff, auditWorktree, blockingFindings, formatFinding, parseAddedLines } from '../lib/diff-audit.mjs';
+import { addedLineCount, auditDiff, auditReport, auditWorktree, blockingFindings, formatFinding, parseAddedLines } from '../lib/diff-audit.mjs';
 import { loadProfiles } from '../lib/repo-profile.mjs';
 import { commitFile, makeTempRepo } from './helpers/temp-repo.mjs';
 
@@ -58,6 +58,14 @@ test('auditWorktree diffs HEAD against origin/<baseBranch>', (t) => {
   const findings = auditWorktree(repo, profiles['monitiv-frontend']);
   assert.equal(formatFinding(findings[0]), 'comment-block\ta.ts:1\t3\t// one');
   assert.equal(addedLineCount(repo, profiles['monitiv-frontend']), 4);
+});
+
+test('auditReport returns the blocking findings and every finding formatted', (t) => {
+  const repo = makeTempRepo('monitiv-frontend', t);
+  commitFile(repo, 'a.ts', '// one\n// two\n// three\nexport const x = 1;\n// why\n');
+  const { blocking, text } = auditReport(repo, profiles['monitiv-frontend']);
+  assert.deepEqual(blocking.map((f) => f.kind), ['comment-block']);
+  assert.equal(text, 'comment-block\ta.ts:1\t3\t// one\ncomment\ta.ts:5\t1\t// why');
 });
 
 test('addedLineCount accepts an explicit base-ref, like auditWorktree', (t) => {

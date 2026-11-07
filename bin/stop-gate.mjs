@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { auditWorktree, blockingFindings, formatFinding } from '../lib/diff-audit.mjs';
+import { auditReport } from '../lib/diff-audit.mjs';
 import { readJson } from '../lib/read-json.mjs';
 import { resolveProfile } from '../lib/repo-profile.mjs';
 import { decide, worktreeFrom } from '../lib/stop-gate.mjs';
@@ -13,8 +13,8 @@ const stateDir = process.env.STOP_GATE_STATE ?? path.join(root, '.superpowers', 
 function problemWith(worktree) {
   if (!worktree) return 'End your report with a line `WORKTREE: <absolute path>` naming the worktree you changed.';
   try {
-    const blocking = blockingFindings(auditWorktree(worktree, resolveProfile(worktree)));
-    return blocking.length ? `diff-audit failed; fix these, then report again:\n${blocking.map(formatFinding).join('\n')}` : null;
+    const { blocking, text } = auditReport(worktree, resolveProfile(worktree));
+    return blocking.length ? `diff-audit failed; fix the blocking findings, justify any single comments, then report again:\n${text}` : null;
   } catch (error) {
     return `diff-audit could not run on ${worktree}: ${error.message}`;
   }
