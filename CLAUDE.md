@@ -24,11 +24,11 @@ Pick a lane when the user approves the plan; lanes only move up.
 |---|---|---|
 | S | One package, ≤~150 lines, no contract or shared state | 1 developer, then a reviewer |
 | M | One repo, one PR | Sequential developer passes of ≤~400 lines, a tester, then a reviewer; no lead. After a shared base unit is reviewed and accepted, disjoint-file units may run as ≤3 parallel developers, each in its own worktree branched from the accepted base unit; if a worktree cannot be created (e.g. the orchestrator session is pinned to a worktree), run the units sequentially in one worktree instead. |
-| L | >1 PR, both repos, or an `openapi.yaml` change | One `team-lead` per repo; teammates only for parallel frontend + gateway |
+| L | >1 PR, both repos, or an `openapi.yaml` change | One `team-lead` per repo |
 
 - Write the task to `tickets/tasks/<id>.md`; its checklist (with SHAs) is the task state. Brief every helper with `node bin/brief.mjs <role> <task-file>` and use the `MODEL:` it prints.
 - Accept work only on `node bin/gate.mjs <worktree>` exit 0 plus a reviewer PASS; a self-report is never the gate. Check `.superpowers/stop-gate/*.failed` after each developer.
-- Never read delegated code. At most 3 long-running agents at once, parallel developers included; after a 402, run everything sequentially. Run the orchestrator in the foreground in iTerm2 or tmux and spawn helpers as named teammates (not background subagents) so each gets a visible pane; a background-job orchestrator puts teammates on a detached tmux server instead.
+- Never read delegated code. At most 3 long-running agents at once, parallel developers included; after a 402, run everything sequentially. Run the orchestrator in the foreground in iTerm2 or tmux and spawn your helpers as named teammates so each gets a visible pane; a background-job orchestrator puts teammates on a detached tmux server instead.
 
 ## Board
 
