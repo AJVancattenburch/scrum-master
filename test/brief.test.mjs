@@ -69,6 +69,18 @@ test('modelFor follows the lane table', () => {
   assert.throws(() => modelFor('team-lead', 'S'), /no team-lead in lane S/);
 });
 
+test('the plan reviewer runs on opus in every lane and checks placement against the architecture guide and the lane table', () => {
+  for (const lane of ['S', 'M', 'L']) assert.equal(modelFor('plan-reviewer', lane), 'opus', lane);
+  for (const repo of ['monitiv-frontend', 'monitiv-gateway']) {
+    const text = brief('plan-reviewer', repo);
+    assert.ok(text.includes('/abs/wt/docs/DEVELOPER_GUIDE.md'), repo);
+    assert.ok(text.includes('git -C /abs/wt ls-tree --name-only origin/dev'), repo);
+    assert.match(text, /else M, one repo and one PR however large, with no lead/, repo);
+  }
+  assert.match(brief('plan-reviewer', 'monitiv-gateway', 'parent: T8\n'), /Skip the lane check: this is a unit of T8/);
+  assert.match(brief('reviewer', 'monitiv-frontend'), /FAIL any created or moved file that the docs under Read these first place elsewhere/);
+});
+
 test('renderTemplate fails loudly on an unfilled placeholder', () => {
   assert.equal(renderTemplate('a {{x}}', { x: '1' }), 'a 1');
   assert.throws(() => renderTemplate('a {{y}}', { x: '1' }), /unfilled placeholder {{y}}/);
