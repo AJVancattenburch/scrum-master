@@ -1,7 +1,7 @@
 {
   "monitiv-frontend": {
     "baseBranch": "dev",
-    "readFirst": ["CLAUDE.md", ".github/pull_request_template.md", "docs/adr/0004-pr-first-workflow.md"],
+    "readFirst": ["CLAUDE.md", "docs/DEVELOPER_GUIDE.md", ".github/pull_request_template.md", "docs/adr/0004-pr-first-workflow.md"],
     "gates": [
       { "name": "check", "cmd": ["pnpm", "check"] },
       { "name": "lint", "cmd": ["pnpm", "lint"] },
@@ -16,7 +16,7 @@
   },
   "monitiv-gateway": {
     "baseBranch": "dev",
-    "readFirst": ["CLAUDE.md", ".github/pull_request_template.md", "CONTRACT.md"],
+    "readFirst": ["CLAUDE.md", "docs/DEVELOPER_GUIDE.md", ".github/pull_request_template.md", "CONTRACT.md"],
     "gates": [
       { "name": "fmt", "cmd": ["golangci-lint", "fmt", "--diff"] },
       { "name": "vet", "cmd": ["go", "vet", "./..."] },
