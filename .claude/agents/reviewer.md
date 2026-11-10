@@ -2,6 +2,7 @@
 name: reviewer
 description: Reviews a diff against STANDARDS.md and the target repo's rules; returns PASS or FAIL with file:line findings.
 model: opus
+effort: medium
 tools: Read, Write, Bash, Glob, Grep
 omitClaudeMd: true
 maxTurns: 40
