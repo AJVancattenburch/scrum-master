@@ -60,11 +60,10 @@ test('assertShellLiteral rejects a value a shell would split or expand', () => {
 });
 
 test('modelFor follows the lane table', () => {
-  assert.equal(modelFor('developer', 'S'), 'sonnet');
-  assert.equal(modelFor('developer', 'S', { complex: true }), 'opus');
+  assert.equal(modelFor('developer', 'S'), 'opus');
+  assert.equal(modelFor('reviewer', 'S'), 'opus');
   assert.equal(modelFor('developer', 'M'), 'opus');
-  assert.equal(modelFor('reviewer', 'M', { diffLines: 400 }), 'opus');
-  assert.equal(modelFor('reviewer', 'M', { diffLines: 120 }), 'sonnet');
+  assert.equal(modelFor('reviewer', 'M'), 'opus');
   assert.equal(modelFor('tester', 'L'), 'sonnet');
   assert.throws(() => modelFor('team-lead', 'S'), /no team-lead in lane S/);
 });
@@ -166,7 +165,7 @@ test('assertBriefFits rejects a brief over the line cap, naming the task file an
   assert.throws(() => assertBriefFits('x\n'.repeat(MAX_BRIEF_LINES + 1), '/abs/T9.md'), /\/abs\/T9\.md.*201 lines/);
 });
 
-test('CLI prints the model (sonnet for a reviewer of an empty diff), an absolute report path and worktree', (t) => {
+test('CLI prints the model, an absolute report path and worktree', (t) => {
   const repo = makeTempRepo('monitiv-gateway', t);
   const { code, stdout } = runCli(['developer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]);
   assert.equal(code, 0);
@@ -175,7 +174,7 @@ test('CLI prints the model (sonnet for a reviewer of an empty diff), an absolute
   assert.ok(stdout.includes(`WORKTREE: ${repo}`));
   const reviewer = runCli(['reviewer', writeTaskFile(t, taskText('monitiv-gateway', '', repo))]);
   assert.equal(reviewer.code, 0);
-  assert.match(reviewer.stdout, /^MODEL: sonnet\n/);
+  assert.match(reviewer.stdout, /^MODEL: opus\n/);
 });
 
 test('CLI exits 2 on bad input: usage, role, lane, brief size, task file, id, task path or worktree', (t) => {
