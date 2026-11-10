@@ -2,6 +2,7 @@
 name: developer
 description: Implements one planned unit in a target repo and reports with its worktree path.
 model: opus
+effort: medium
 tools: Read, Write, Edit, Bash, Glob, Grep
 omitClaudeMd: true
 maxTurns: 150

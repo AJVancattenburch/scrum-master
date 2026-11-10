@@ -2,6 +2,7 @@
 name: team-lead
 description: Owns one repo's slice of an L-lane task and runs developer, tester and reviewer helpers through bin/brief.mjs.
 model: opus
+effort: medium
 omitClaudeMd: true
 ---
 

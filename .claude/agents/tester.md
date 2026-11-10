@@ -2,6 +2,7 @@
 name: tester
 description: Runs a worktree's gate and the repo's verification method from its brief; reports without fixing.
 model: sonnet
+effort: medium
 tools: Read, Write, Bash, Glob, Grep
 omitClaudeMd: true
 maxTurns: 40
