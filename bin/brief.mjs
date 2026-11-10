@@ -4,7 +4,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertBriefFits, assertShellLiteral, briefVars, inputError, modelFor, parseTask, renderTemplate, ROLES } from '../lib/brief.mjs';
 import { CommandError } from '../lib/command-error.mjs';
-import { addedLineCount } from '../lib/diff-audit.mjs';
 import { resolveProfile } from '../lib/repo-profile.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,8 +25,7 @@ function main([role, taskArg]) {
     const standardsPath = path.join(root, 'STANDARDS.md');
     const standards = readFileSync(standardsPath, 'utf8').replace(/^# .*\n+/, '').trim();
     const template = readFileSync(path.join(root, 'briefs', `${role}.md`), 'utf8');
-    const diffLines = role === 'reviewer' ? addedLineCount(task.fields.worktree, profile) : undefined;
-    const model = modelFor(role, task.fields.lane, { complex: task.fields.complex === 'true', diffLines });
+    const model = modelFor(role, task.fields.lane);
     const output = `MODEL: ${model}\n\n${renderTemplate(template, briefVars({ role, task, profile, standards, standardsPath, root, taskFile }))}`;
     assertBriefFits(output, taskFile);
     console.log(output);
