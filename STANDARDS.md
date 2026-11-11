@@ -5,3 +5,4 @@
 - KISS, DRY, SRP: one responsibility per unit. Decompose in-scope functions that do more than one thing. Write nothing speculative.
 - Before sign-off, run `git diff --numstat` and justify every file's growth.
 - Handle errors explicitly. No bare `catch`, no swallowed errors.
+- Design data access for scale: fetch on demand (per view or tab, paged), debounce user-driven queries and cancel superseded requests, keep every query bounded (filtered on indexed or clustered keys, no N+1, no unbounded scans), and cache only per user and branch scope with a lifetime tied to the source's load cadence. Never put PHI in a shared or CDN cache or in browser storage. New event, cache, polling or streaming infrastructure needs an orchestrator ruling first. Detail: `tickets/monitiv-home-health.plan.md`, "Data fetching and freshness".
