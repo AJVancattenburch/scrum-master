@@ -50,4 +50,5 @@ node bin/board.mjs list --open
 
 - If a task needs real patient data, stop and tell the user to switch to the work laptop. Data needs describe shape and source, never values.
 - Inside a sibling repo, its CLAUDE.md governs process.
+- Update a feature branch from its base only by rebase, never by merging the base in (both sibling repos' `docs/DEVELOPER_GUIDE.md` forbid it). A rebase of a pushed branch needs the user's force-push approval and `git push --force-with-lease=<branch>:<expected sha>`. Before ruling on any git workflow step, read the sibling repo's DEVELOPER_GUIDE rule for it.
 - Use Node scripts, not OS-specific shell commands.
