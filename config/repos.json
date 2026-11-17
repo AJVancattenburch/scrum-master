@@ -21,7 +21,7 @@
       { "name": "fmt", "cmd": ["golangci-lint", "fmt", "--diff"] },
       { "name": "vet", "cmd": ["go", "vet", "./..."] },
       { "name": "lint", "cmd": ["golangci-lint", "run", "--new-from-rev={{baseRef}}", "--timeout=5m"] },
-      { "name": "test", "cmd": ["make", "test"] },
+      { "name": "test", "cmd": ["env", "GOTOOLCHAIN=go1.26.11", "make", "test-cover"] },
       { "name": "openapi", "cmd": ["npx", "--yes", "@redocly/cli@2.5.0", "lint", "api/openapi.yaml"] },
       { "name": "snowflake-db", "cmd": ["./scripts/check-snowflake-db-literals.sh"] }
     ],
