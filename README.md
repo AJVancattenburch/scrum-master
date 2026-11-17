@@ -68,7 +68,7 @@ bin/start
 
 ## Daily use
 
-Start the orchestrator. `bin/start` opens (or reattaches to) the tmux session `scrum-master`, overridable with `SCRUM_MASTER_SESSION`; extra arguments go to `claude`. Teammates get their own tmux panes only when launched this way; a plain `claude` runs them in-process.
+Start the orchestrator. `bin/start` opens (or reattaches to) the tmux session `scrum-master`, overridable with `SCRUM_MASTER_SESSION`; extra arguments go to `claude`. Teammates get tmux panes from `teammateMode` in `.claude/settings.json`; a plain `claude` outside tmux opens them in a separate tmux session.
 
 ```sh
 bin/start

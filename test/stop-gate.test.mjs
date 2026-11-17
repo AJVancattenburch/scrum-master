@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -89,4 +89,16 @@ test('when the failure marker itself cannot be written, the original hook error 
   assert.equal(status, 1);
   assert.match(stderr, /stop-gate: /);
   assert.match(stderr, /stop-gate: could not write marker: /);
+});
+
+test('each run prunes block counts older than a day, never failed markers', (t) => {
+  const dir = state(t);
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  for (const name of ['old.json', 'old.failed']) {
+    writeFileSync(path.join(dir, name), '1');
+    utimesSync(path.join(dir, name), twoDaysAgo, twoDaysAgo);
+  }
+  writeFileSync(path.join(dir, 'fresh.json'), '1');
+  hook(dir, { agent_id: 'a1', last_assistant_message: 'no line' });
+  assert.deepEqual(readdirSync(dir).sort(), ['a1.json', 'fresh.json', 'old.failed']);
 });

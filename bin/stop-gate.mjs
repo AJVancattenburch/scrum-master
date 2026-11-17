@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { auditReport } from '../lib/diff-audit.mjs';
@@ -10,6 +10,7 @@ import { decide, worktreeFrom } from '../lib/stop-gate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const stateDir = process.env.STOP_GATE_STATE ?? path.join(root, '.superpowers', 'stop-gate');
+const STALE_COUNT_MS = 24 * 60 * 60 * 1000;
 
 function problemWith(worktree) {
   if (!worktree) return 'End your report with a line `WORKTREE: <absolute path>` naming the worktree you changed.';
@@ -22,11 +23,23 @@ function problemWith(worktree) {
   }
 }
 
+// A developer stopped while blocked never reaches the allow path that deletes its count,
+// and agent ids are never reused, so an old count can only be an orphan.
+function pruneStaleCounts(now) {
+  for (const name of readdirSync(stateDir)) {
+    if (!name.endsWith('.json')) continue;
+    const file = path.join(stateDir, name);
+    const stats = statSync(file, { throwIfNoEntry: false });
+    if (stats && now - stats.mtimeMs > STALE_COUNT_MS) rmSync(file, { force: true });
+  }
+}
+
 function main() {
   const payload = JSON.parse(readFileSync(0, 'utf8'));
   if (!payload.agent_id) throw new Error('hook input has no agent_id');
   const id = String(payload.agent_id).replace(/[^\w.-]/g, '_');
   mkdirSync(stateDir, { recursive: true });
+  pruneStaleCounts(Date.now());
   const countPath = path.join(stateDir, `${id}.json`);
   const markerPath = path.join(stateDir, `${id}.failed`);
   const blocksSoFar = readJson(countPath, 0);
