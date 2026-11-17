@@ -12,7 +12,9 @@ Task:
 
 One plan item per commit. Add tests only where the repo requires them, and run them once, after every plan item is done; never rerun them per commit or per fix. Touch only what the task needs. Never push, merge or force-push. Never merge the base branch into the feature branch; bring it up to date only by rebase, and only when the task says so.
 Run each command exactly as written; do not compose shell variables, pipes or loops.
-Before reporting, run `{{auditCommand}}` and fix every blocking finding.
+Before reporting, in this order:
+1. Run `{{auditCommand}}` and fix every blocking finding.
+2. Run `{{gateCommand}}` once, as your last command, exactly as written with no pipe, so its exit code shows. After it passes, make no more commits. If it fails, fix the cause and rerun only the gate.
 
 Stop and report instead of continuing if:
 {{escalations}}

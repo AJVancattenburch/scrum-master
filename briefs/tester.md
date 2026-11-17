@@ -7,7 +7,7 @@ Code standards the work must meet, from `{{standardsPath}}`:
 {{standards}}
 
 Run each command exactly as written; do not compose shell variables, pipes or loops.
-1. Run `{{gateCommand}}`. Paste its summary as-is.
+1. {{gateStep}} Run the gate at most once.
 2. Then verify:
 {{verification}}
 
