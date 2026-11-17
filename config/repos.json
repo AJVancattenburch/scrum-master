@@ -8,7 +8,7 @@
       { "name": "test", "cmd": ["pnpm", "test"] }
     ],
     "pixelDiff": true,
-    "audit": { "codeExtensions": ["js", "mjs", "ts", "mts", "svelte"], "maxCommentRun": 2, "maxFileGrowth": 200, "phiTag": "data classification" },
+    "audit": { "codeExtensions": ["js", "mjs", "ts", "mts", "svelte"], "maxCommentRun": 2, "maxFileGrowth": 200, "phiTag": "data classification", "generated": ["packages/api-client/src/types/api.ts"] },
     "verification": [
       "Start the app per the repo's CLAUDE.md before the gate; the gate runs the pixel diff, and every viewport must pass.",
       "Compare behavior with the task's prototype source: interactions, states, empty and error cases."
