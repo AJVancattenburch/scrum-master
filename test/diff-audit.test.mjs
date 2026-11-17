@@ -40,6 +40,13 @@ test('Go doc comment blocks and Go growth count under the gateway profile', () =
   assert.equal(auditDiff(diff('a.go', 1, big), { ...GO, maxFileGrowth: 4 })[0].kind, 'growth');
 });
 
+test('a profile\'s generated files get no comment or growth findings', () => {
+  const api = 'packages/api-client/src/types/api.ts';
+  const lines = ['/** one', ' * two', ' * three */', ...Array(FE.maxFileGrowth).fill('x: string;')];
+  assert.deepEqual(auditDiff(diff(api, 1, lines), FE), []);
+  assert.equal(auditDiff(diff('packages/api-client/src/insight.ts', 1, lines), FE).length, 2);
+});
+
 test('each profile ignores the other repo\'s file types and non-code files', () => {
   const block = ['// one', '// two', '// three'];
   assert.deepEqual(auditDiff(diff('a.go', 1, block), FE), []);
