@@ -15,6 +15,7 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const BIN = path.join(ROOT, 'bin', 'brief.mjs');
 const taskText = (repo, extra = '', worktree = '/abs/wt') => `---\nid: T9\nrepo: ${repo}\nworktree: ${worktree}\nlane: M\n${extra}---\n## Goal\nDo it.\n`;
 
+const rolesFor = (repo) => ROLES.filter((r) => r !== 'tester' || profiles[repo].tester !== false);
 const brief = (role, repo, extra) => {
   const task = parseTask(taskText(repo, extra));
   const vars = briefVars({ role, task, profile: { name: repo, ...profiles[repo] }, standards: '- KISS', standardsPath: '/abs/STANDARDS.md', root: '/abs/sm', taskFile: '/abs/sm/tickets/tasks/T9.md' });
@@ -86,7 +87,7 @@ test('renderTemplate fails loudly on an unfilled placeholder', () => {
 });
 
 test('every brief carries the standards, the escalations and the report path, and every role escalates an unlisted contract change', () => {
-  for (const role of ROLES) {
+  for (const role of rolesFor('monitiv-gateway')) {
     const text = brief(role, 'monitiv-gateway');
     assert.match(text, /\/abs\/STANDARDS\.md/, role);
     assert.match(text, /- KISS/, role);
@@ -120,12 +121,12 @@ test('developer and team-lead briefs pin the profile base branch', () => {
 
 test('the team-lead brief runs one long-running helper at a time, never parallel developers', () => {
   const text = brief('team-lead', 'monitiv-gateway');
-  assert.match(text, /then reviewer, one long-running helper at a time\./);
+  assert.match(text, /then reviewer, one long-running helper at a time;/);
   assert.doesNotMatch(text, /parallel|does not exist yet/);
 });
 
 test('the team-lead brief prints literal brief commands for the real roles and task file', () => {
-  const text = brief('team-lead', 'monitiv-gateway');
+  const text = brief('team-lead', 'monitiv-frontend');
   for (const role of ['developer', 'tester', 'reviewer']) {
     assert.ok(text.includes(`\`node /abs/sm/bin/brief.mjs ${role} /abs/sm/tickets/tasks/T9.md\``), role);
   }
@@ -142,10 +143,10 @@ test('every command in a brief is one literal command', () => {
 });
 
 test('a brief carries only its own repo\'s workflow', () => {
-  const tokens = (p) => [...p.readFirst, ...p.verification, ...p.gates.map((g) => g.cmd.join(' '))];
+  const tokens = (p) => [...p.readFirst, ...(p.verification ?? []), ...p.gates.map((g) => g.cmd.join(' '))];
   const pairs = [['monitiv-gateway', 'monitiv-frontend'], ['monitiv-frontend', 'monitiv-gateway']];
   for (const [own, other] of pairs) {
-    for (const role of ROLES) {
+    for (const role of rolesFor(own)) {
       const text = brief(role, own, own === 'monitiv-frontend' ? 'feature: f\nurl: http://x\n' : '');
       for (const token of tokens(profiles[other]).filter((t) => !tokens(profiles[own]).includes(t))) {
         assert.ok(!text.includes(token), `${role} brief for ${own} leaks "${token}"`);
@@ -219,7 +220,7 @@ test('the developer runs the audit first, then the gate once and last with no pi
 
 test('only the developer brief drops the PR template from Read these first', () => {
   for (const repo of ['monitiv-frontend', 'monitiv-gateway']) {
-    for (const role of ROLES) {
+    for (const role of rolesFor(repo)) {
       const has = brief(role, repo).includes('/abs/wt/.github/pull_request_template.md');
       assert.equal(has, role !== 'developer', `${role} ${repo}`);
     }
@@ -227,10 +228,19 @@ test('only the developer brief drops the PR template from Read these first', () 
   }
 });
 
+test('the gateway has no tester: briefing one fails and its lead never runs one', () => {
+  assert.throws(() => brief('tester', 'monitiv-gateway'), { code: 'EINPUT', message: /has no tester/ });
+  const lead = brief('team-lead', 'monitiv-gateway');
+  assert.doesNotMatch(lead, /brief\.mjs tester/);
+  assert.match(lead, /run plan-reviewer, then developer, then reviewer,/);
+  assert.match(lead, /only on a PASS from the reviewer; the orchestrator runs the gate\./);
+  assert.match(brief('team-lead', 'monitiv-frontend'), /then tester, then reviewer.*\n.*gate PASS from the tester/s);
+});
+
 test('the tester skips the gate when the orchestrator already passed it on HEAD, and runs it at most once', () => {
-  const plain = brief('tester', 'monitiv-gateway');
+  const plain = brief('tester', 'monitiv-frontend');
   assert.match(plain, /1\. Run `node \/abs\/sm\/bin\/gate\.mjs \/abs\/wt`\. Paste its summary as-is\. Run the gate at most once\./);
-  const gated = brief('tester', 'monitiv-gateway', 'gatedSha: 32bc226\n');
+  const gated = brief('tester', 'monitiv-frontend', 'gatedSha: 32bc226\n');
   assert.match(gated, /already passed the gate at 32bc226\. Run `git -C \/abs\/wt rev-parse HEAD`: if it starts with 32bc226, skip the gate/);
   assert.match(gated, /Run the gate at most once\./);
   assert.throws(() => parseTask(taskText('monitiv-gateway', 'gatedSha: HEAD;rm\n')), { code: 'EINPUT', message: /gatedSha must not contain|gatedSha must be/ });
