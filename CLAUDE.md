@@ -23,7 +23,7 @@ Pick the lane strictly from this table when the user approves the plan: L if any
 | Lane | Fits when | Agents |
 |---|---|---|
 | S | One package, ≤~150 lines, no contract or shared state | 1 developer, then a reviewer |
-| M | One repo, one PR, however large | Sequential developer passes of ≤~400 lines, a tester, then a reviewer; no lead. After a shared base unit is reviewed and accepted, disjoint-file units may run as ≤3 parallel developers, each in its own worktree branched from the accepted base unit; if a worktree cannot be created (e.g. the orchestrator session is pinned to a worktree), run the units sequentially in one worktree instead. |
+| M | One repo, one PR, however large | Sequential developer passes of ≤~400 lines, a tester (frontend only: on the gateway the gate runs every test and the reviewer judges them), then a reviewer; no lead. After a shared base unit is reviewed and accepted, disjoint-file units may run as ≤3 parallel developers, each in its own worktree branched from the accepted base unit; if a worktree cannot be created (e.g. the orchestrator session is pinned to a worktree), run the units sequentially in one worktree instead. |
 | L | >1 PR, both repos, or an `openapi.yaml` change | One `team-lead` per repo |
 
 - Write the task to `tickets/tasks/<id>.md`; its checklist (with SHAs) is the task state. Brief every helper with `node bin/brief.mjs <role> <task-file>` and use the `MODEL:` it prints. Reports are named `<id>-<role>.md`, so give each developer pass its own task id.

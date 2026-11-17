@@ -15,7 +15,7 @@ test('repoNameFromRemote handles a trailing slash and an scp remote with no .git
 
 test('every profile has the fields the scripts rely on', () => {
   for (const [name, p] of Object.entries(loadProfiles())) {
-    assert.ok(p.baseBranch && p.readFirst.length && p.gates.length && p.verification.length, name);
+    assert.ok(p.baseBranch && p.readFirst.length && p.gates.length && (p.tester === false || p.verification.length), name);
     assert.equal(typeof p.pixelDiff, 'boolean', name);
     assert.ok(p.audit.codeExtensions.length && p.audit.phiTag, name);
   }

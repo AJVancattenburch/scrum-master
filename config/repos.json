@@ -27,9 +27,6 @@
     ],
     "pixelDiff": false,
     "audit": { "codeExtensions": ["go"], "maxCommentRun": 2, "maxFileGrowth": 200, "phiTag": "data classification" },
-    "verification": [
-      "Every mounted route matches api/openapi.yaml (TestRoutesMatchOpenAPI passes) and responses match their schemas.",
-      "Prove each new test can fail: break the code it covers, watch it fail with the expected message, restore. Record this in the PR's Verification section."
-    ]
+    "tester": false
   }
 }
