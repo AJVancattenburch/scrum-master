@@ -208,3 +208,31 @@ test('CLI exits 2 when the task repo does not match the worktree', (t) => {
   assert.equal(code, 2);
   assert.match(stderr, /task says repo monitiv-gateway/);
 });
+
+test('the developer runs the audit first, then the gate once and last with no pipe, and commits nothing after it passes', () => {
+  const text = brief('developer', 'monitiv-gateway');
+  const audit = text.indexOf('1. Run `node /abs/sm/bin/diff-audit.mjs /abs/wt`');
+  const gate = text.indexOf('2. Run `node /abs/sm/bin/gate.mjs /abs/wt` once, as your last command');
+  assert.ok(audit > 0 && gate > audit, 'audit before gate');
+  assert.match(text, /with no pipe, so its exit code shows\. After it passes, make no more commits\. If it fails, fix the cause and rerun only the gate\./);
+});
+
+test('only the developer brief drops the PR template from Read these first', () => {
+  for (const repo of ['monitiv-frontend', 'monitiv-gateway']) {
+    for (const role of ROLES) {
+      const has = brief(role, repo).includes('/abs/wt/.github/pull_request_template.md');
+      assert.equal(has, role !== 'developer', `${role} ${repo}`);
+    }
+    assert.ok(brief('developer', repo).includes('/abs/wt/docs/DEVELOPER_GUIDE.md'), repo);
+  }
+});
+
+test('the tester skips the gate when the orchestrator already passed it on HEAD, and runs it at most once', () => {
+  const plain = brief('tester', 'monitiv-gateway');
+  assert.match(plain, /1\. Run `node \/abs\/sm\/bin\/gate\.mjs \/abs\/wt`\. Paste its summary as-is\. Run the gate at most once\./);
+  const gated = brief('tester', 'monitiv-gateway', 'gatedSha: 32bc226\n');
+  assert.match(gated, /already passed the gate at 32bc226\. Run `git -C \/abs\/wt rev-parse HEAD`: if it starts with 32bc226, skip the gate/);
+  assert.match(gated, /Run the gate at most once\./);
+  assert.throws(() => parseTask(taskText('monitiv-gateway', 'gatedSha: HEAD;rm\n')), { code: 'EINPUT', message: /gatedSha must not contain|gatedSha must be/ });
+  assert.throws(() => parseTask(taskText('monitiv-gateway', 'gatedSha: HEAD\n')), { code: 'EINPUT', message: /gatedSha must be a 7-40 character hex/ });
+});
