@@ -20,12 +20,15 @@
     "gates": [
       { "name": "fmt", "cmd": ["golangci-lint", "fmt", "--diff"] },
       { "name": "vet", "cmd": ["go", "vet", "./..."] },
-      { "name": "lint", "cmd": ["golangci-lint", "run", "--new-from-rev={{baseRef}}", "--timeout=5m"] },
-      { "name": "test", "cmd": ["env", "GOTOOLCHAIN=go1.26.11", "make", "test-cover"] },
+      { "name": "lint", "cmd": ["golangci-lint", "run", "--timeout=10m"] },
+      { "name": "sqlbind", "cmd": ["go", "run", "./cmd/sqlbindlint", "./..."] },
+      { "name": "scratch-citations", "cmd": ["bash", "-c", "! git grep -nE 'docs/superpowers/[a-z]+/[^ )`\"]+\\.md' -- ':!.gitignore' ':!CLAUDE.md' ':!docs/adr/0006-*' ':!.github/workflows/ci.yml'"] },
+      { "name": "test", "cmd": ["make", "test-cover"] },
       { "name": "openapi", "cmd": ["npx", "--yes", "@redocly/cli@2.5.0", "lint", "api/openapi.yaml"] },
       { "name": "snowflake-db", "cmd": ["./scripts/check-snowflake-db-literals.sh"] }
     ],
     "pixelDiff": false,
+    "goToolchain": true,
     "audit": { "codeExtensions": ["go"], "maxCommentRun": 2, "maxFileGrowth": 200, "phiTag": "data classification" },
     "tester": false
   }
