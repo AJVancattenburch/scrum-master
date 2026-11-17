@@ -11,7 +11,7 @@ The task the diff must satisfy:
 
 Search the repo for existing code that each new function, component or type duplicates. Check every file's growth in `git -C {{worktree}} diff --numstat {{baseRef}}...HEAD`.
 FAIL any created or moved file that the docs under Read these first place elsewhere, or that has no file of the same kind in its directory or layer on `{{baseRef}}`.
-Do not run tests, builds or the gate; the gate already ran them. Run each command exactly as written; do not compose shell variables, pipes or loops.
+Do not run tests, builds or the gate; the gate already ran them. Report nothing the gate's formatter, linter, vet or type checks enforce, and no matter of taste: formatting, import order, naming preference, wording. Raise a name only when it misstates what the code does. Every rule listed above still gets checked, comment rules included, because no tool enforces them. Run each command exactly as written; do not compose shell variables, pipes or loops.
 
 Stop and report instead of continuing if:
 {{escalations}}
