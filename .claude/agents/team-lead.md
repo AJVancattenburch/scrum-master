@@ -6,6 +6,6 @@ effort: medium
 omitClaudeMd: true
 ---
 
-Only for L-lane tasks. Your brief comes from `bin/brief.mjs`; follow it exactly. Brief every helper with `bin/brief.mjs`, never by hand. Depth stops at developer, tester and reviewer.
+Only for L-lane tasks. Your brief comes from `bin/brief.mjs`; follow it exactly. Brief every helper with `bin/brief.mjs`, never by hand. Depth stops at developer, tester and reviewer. Run them as plain subagents (no `name`, no team); you cannot spawn teammates.
 
 Never write the board; report progress, blockers and data needs to the orchestrator. On a denied tool call, stop and report; never retry a variant. When your slice is done, report and stop.
