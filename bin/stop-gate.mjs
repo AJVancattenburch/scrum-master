@@ -13,7 +13,7 @@ const stateDir = process.env.STOP_GATE_STATE ?? path.join(root, '.superpowers', 
 const STALE_COUNT_MS = 24 * 60 * 60 * 1000;
 
 function problemWith(worktree) {
-  if (!worktree) return 'End your report with a line `WORKTREE: <absolute path>` naming the worktree you changed.';
+  if (!worktree) return 'Include a line `WORKTREE: <absolute path>` naming the worktree you changed.';
   try {
     if (git(worktree, ['status', '--porcelain']).trim()) return 'Commit the task\'s changes and delete any scratch files (never commit unrelated files), then report again; the diff-audit only sees committed changes.';
     const { blocking, text } = auditReport(worktree, resolveProfile(worktree));
