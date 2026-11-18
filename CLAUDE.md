@@ -35,7 +35,7 @@ Pick the lane strictly from this table when the user approves the plan: L if any
 
 Only you write the board; team-leads report progress, blockers and data needs to you. When two orchestrator sessions run at once, only the one that owns the board writes `board.json` and `tickets/HANDOFF.md`, and the other one keeps its state in its own task hand-off.
 
-Hand-offs: `tickets/HANDOFF.md` holds cross-task state and one pointer per active task; each task's last-left-off state goes in `tickets/handoffs/<id>.md`. Unit state stays in the unit's task file and reports.
+Hand-offs: `tickets/HANDOFF.md` is the cross-task index; each task's current state goes in `tickets/handoffs/<id>.md`, overwritten in place (format: `.claude/rules/handoffs.md`, which loads when you open one). To resume a named task, read only its hand-off. Unit state stays in the unit's task file and reports.
 
 ```
 node bin/board.mjs add tasks title="Alerts page" repo=both
