@@ -73,6 +73,13 @@ test('auditReport returns the blocking findings and every finding formatted', (t
   assert.equal(text, 'comment-block\ta.ts:1\t3\t// one\ncomment\ta.ts:5\t1\t// why');
 });
 
+test('auditReport lists blocking findings before single comments', (t) => {
+  const repo = makeTempRepo('monitiv-frontend', t);
+  commitFile(repo, 'a.ts', '// why\nexport const x = 1;\n// one\n// two\n// three\n');
+  const { text } = auditReport(repo, profiles['monitiv-frontend']);
+  assert.equal(text, 'comment-block\ta.ts:3\t3\t// one\ncomment\ta.ts:1\t1\t// why');
+});
+
 test('codeExtensions are escaped so "." only matches a literal dot', () => {
   const audit = { codeExtensions: ['t.s'], maxCommentRun: 2, maxFileGrowth: 200, phiTag: 'data classification' };
   assert.deepEqual(auditDiff(diff('file.tXs', 1, ['// one', '// two', '// three']), audit), []);
