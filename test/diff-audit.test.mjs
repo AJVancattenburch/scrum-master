@@ -40,6 +40,14 @@ test('Go doc comment blocks and Go growth count under the gateway profile', () =
   assert.equal(auditDiff(diff('a.go', 1, big), { ...GO, maxFileGrowth: 4 })[0].kind, 'growth');
 });
 
+test('growth counts net lines, so rewriting existing lines does not grow a file', () => {
+  const rewrite = ['diff --git a/a.go b/a.go', '--- a/a.go', '+++ b/a.go', '@@ -1,5 +1,5 @@',
+    ...Array.from({ length: 5 }, (_, i) => `-var v${i} = 0`), ...Array.from({ length: 5 }, (_, i) => `+var v${i} = 1`)].join('\n');
+  assert.deepEqual(auditDiff(rewrite, { ...GO, maxFileGrowth: 4 }), []);
+  const grown = rewrite.replace('@@ -1,5 +1,5 @@', '@@ -1,5 +1,10 @@') + '\n' + Array.from({ length: 5 }, (_, i) => `+var w${i} = 1`).join('\n');
+  assert.deepEqual(auditDiff(grown, { ...GO, maxFileGrowth: 4 }).map((f) => [f.kind, f.lines]), [['growth', 5]]);
+});
+
 test('a profile\'s generated files get no comment or growth findings', () => {
   const api = 'packages/api-client/src/types/api.ts';
   const lines = ['/** one', ' * two', ' * three */', ...Array(FE.maxFileGrowth).fill('x: string;')];

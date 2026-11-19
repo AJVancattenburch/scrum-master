@@ -111,7 +111,7 @@ Gate a worktree with its repo's diff-audit, checks and pixel diffs. It prints a 
 node bin/gate.mjs <worktree> [--feature <name> --url <url>]...
 ```
 
-Audit only the comment and file-growth rules against `origin/<baseBranch>` (or a given ref):
+Audit only the comment and net file-growth (added minus removed lines) rules against `origin/<baseBranch>` (or a given ref):
 
 ```sh
 node bin/diff-audit.mjs <worktree> [base-ref]
