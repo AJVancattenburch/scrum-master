@@ -12,7 +12,7 @@ Task:
 
 Read only the files the task names and the precedents it cites. Before your first edit, use at most 10 reads or searches in total; never read a whole package to orient yourself. If the task doesn't say where something lives or how it is scoped, stop and ask rather than survey: an open question costs one message, a survey costs a pass.
 When the task ports or fixes a design from an Artifact, take colors, font sizes, spacing, borders and copy from the Artifact source’s CSS and markup, never by eye from a screenshot, and list in your report any value you couldn’t match.
-One plan item per commit. Add tests only where the repo requires them, and run them once, after every plan item is done; never rerun them per commit or per fix. Touch only what the task needs. Never push, merge or force-push. Never merge the base branch into the feature branch; bring it up to date only by rebase, and only when the task says so.
+One plan item per commit. Add tests only where the repo requires them, and run them once, after every plan item is done; never rerun them per commit or per fix. Touch only what the task needs. Always write the documentation and release-note entries the target repo's rules require for your change, in exactly the location and form those rules prescribe; a task's file list never excludes them. Never push, merge or force-push. Never merge the base branch into the feature branch; bring it up to date only by rebase, and only when the task says so.
 Run each command exactly as written; do not compose shell variables, pipes or loops.
 If you stop with no commits and a clean tree, skip both steps below and report the blocker at once.
 Before reporting, in this order:
