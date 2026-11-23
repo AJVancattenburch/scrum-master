@@ -83,6 +83,7 @@ test('the plan reviewer runs on opus in every lane and checks placement against 
 
 test('renderTemplate fails loudly on an unfilled placeholder', () => {
   assert.equal(renderTemplate('a {{x}}', { x: '1' }), 'a 1');
+  assert.equal(renderTemplate('a\n{{x}}\nb', { x: '' }), 'a\nb');
   assert.throws(() => renderTemplate('a {{y}}', { x: '1' }), /unfilled placeholder {{y}}/);
 });
 
@@ -143,7 +144,7 @@ test('every command in a brief is one literal command', () => {
 });
 
 test('a brief carries only its own repo\'s workflow', () => {
-  const tokens = (p) => [...p.readFirst, ...(p.verification ?? []), ...p.gates.map((g) => g.cmd.join(' '))];
+  const tokens = (p) => [...p.readFirst, ...(p.verification ?? []), ...(p.developerRules ?? []), ...p.gates.map((g) => g.cmd.join(' '))];
   const pairs = [['monitiv-gateway', 'monitiv-frontend'], ['monitiv-frontend', 'monitiv-gateway']];
   for (const [own, other] of pairs) {
     for (const role of rolesFor(own)) {

@@ -12,6 +12,9 @@
     "verification": [
       "Start the app per the repo's CLAUDE.md before the gate; the gate runs the pixel diff, and every viewport must pass.",
       "Compare behavior with the task's prototype source: interactions, states, empty and error cases."
+    ],
+    "developerRules": [
+      "When the task ports or fixes a design from an Artifact, take colors, font sizes, spacing, borders and copy from the Artifact source’s CSS and markup, never by eye from a screenshot, and list in your report any value you couldn’t match."
     ]
   },
   "monitiv-gateway": {
